@@ -7,7 +7,7 @@ function Footer() {
       <Container>
         <small>
           <strong>StepRunner</strong> — Made by humans 👨 for gherkins 🥒. View on{' '}
-          <a href="https://github.com/your-org/steprunner" target="_blank" rel="noopener noreferrer">
+          <a href="https://github.com/steveswinsburg/steprunner" target="_blank" rel="noopener noreferrer">
             GitHub
           </a>
           .
