@@ -8,14 +8,14 @@ StepRunner is a lightweight app for exploring and running `.feature` files manua
 
 - 📂 Upload and parse `.feature` files
 - 🧾 Display features, scenarios, and steps in a clean UI
-- ✅ Manually mark steps as passed/failed/skipped
+- ✅ Manually mark steps as passed/failed/skipped one-by-one or in bulk
 - 🗂 Group and filter by feature or tag
-- 💾 Save and reload session state (optional)
+- 💾 Save and load sessions
 - 🔍 Syntax-highlighted Gherkin viewer
 
 ## 📸 Screenshot
 
-*Coming soon...*
+<img src="screenshot.png" width="600px" />
 
 ## 🧠 How It Works
 1. Upload a .feature file or a zip of feature files
