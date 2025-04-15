@@ -1,6 +1,6 @@
 # 🏃‍♂️ StepRunner
 
-**A manual viewer and runner for Cucumber/Gherkin feature files.**
+**A viewer and runner for Cucumber/Gherkin feature files.**
 
 StepRunner is a lightweight app for exploring and running `.feature` files manually. It helps QA engineers, product owners, and developers walk through Gherkin test scenarios step by step — Ideal for exploratory testing, documentation walkthroughs, or scenarios not ready for automation.
 
