@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button, ButtonGroup } from 'react-bootstrap';
-import { CheckCircleFill, XCircleFill, SkipForwardFill } from 'react-bootstrap-icons';
+import { CheckCircleFill, XCircleFill, SkipForwardFill, QuestionCircleFill } from 'react-bootstrap-icons';
 import DragDropZone from '../components/DragDropZone';
 import FeatureSidebar from '../components/FeatureSidebar';
 import db from '../db/indexedDb';
@@ -127,6 +127,18 @@ function SessionViewer() {
     }
   };
 
+  const highlightKeyword = (text) => {
+    if (!text) return null;
+    const words = text.split(' ');
+    const firstWord = words.shift();
+    return (
+      <span>
+        <span style={{ color: '#fd7e14', fontWeight: 'normal' }}>{firstWord}</span>{' '}
+        {words.join(' ')}
+      </span>
+    );
+  };
+
   return (
     <div style={{ display: 'flex' }}>
       <div className="d-flex flex-column border-end pe-2" style={{ minWidth: '180px' }}>
@@ -164,20 +176,23 @@ function SessionViewer() {
 
         {parsed && (
           <div className="mt-4">
-            <h4>{parsed.title}</h4>
+            <h4>Feature: {parsed.title}</h4>
             {parsed.scenarios.map((sc, sIdx) => (
               <div key={sIdx} className="mb-4">
                 <div className="d-flex justify-content-between align-items-center">
-                  <h5>{sc.title}</h5>
+                  <h5>Scenario: {sc.title}</h5>
                   <ButtonGroup>
                     <Button size="sm" variant="success" onClick={() => handleMarkAllInScenario(sIdx, 'pass')}>
-                      <CheckCircleFill className="me-1" /> Pass All
+                      <CheckCircleFill className="me-1" /> All
                     </Button>
                     <Button size="sm" variant="danger" onClick={() => handleMarkAllInScenario(sIdx, 'fail')}>
-                      <XCircleFill className="me-1" /> Fail All
+                      <XCircleFill className="me-1" /> All
                     </Button>
                     <Button size="sm" variant="warning" onClick={() => handleMarkAllInScenario(sIdx, 'skip')}>
-                      <SkipForwardFill className="me-1" /> Skip All
+                      <SkipForwardFill className="me-1" /> All
+                    </Button>
+                    <Button size="sm" variant="info" onClick={() => handleMarkAllInScenario(sIdx, 'undo')}>
+                      <QuestionCircleFill className="me-1" /> All
                     </Button>
                   </ButtonGroup>
                 </div>
@@ -187,11 +202,12 @@ function SessionViewer() {
                     const status = stepResults[key];
                     return (
                       <li key={stepIdx} style={getStepStyle(status)} className="mb-1">
-                        {step}{' '}
+                        {highlightKeyword(step)}{' '}
                         <ButtonGroup size="sm">
                           <Button variant={status === 'pass' ? 'success' : 'outline-success'} onClick={() => handleMarkStep(sIdx, stepIdx, 'pass')}><CheckCircleFill /></Button>
                           <Button variant={status === 'fail' ? 'danger' : 'outline-danger'} onClick={() => handleMarkStep(sIdx, stepIdx, 'fail')}><XCircleFill /></Button>
                           <Button variant={status === 'skip' ? 'warning' : 'outline-warning'} onClick={() => handleMarkStep(sIdx, stepIdx, 'skip')}><SkipForwardFill /></Button>
+                          <Button variant={status === 'undo' ? 'info' : 'outline-info'} onClick={() => handleMarkStep(sIdx, stepIdx, 'undo')}><QuestionCircleFill /></Button>
                         </ButtonGroup>
                       </li>
                     );
