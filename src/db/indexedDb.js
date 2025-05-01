@@ -5,7 +5,7 @@ const db = new Dexie('StepRunnerDB');
 db.version(1).stores({
   sessions: '++id, name, createdAt',
   features: '++id, sessionId, title, content',
-  steps: '++id, sessionId, featureId, scenarioIndex, stepIndex, status',
+  steps: '++id, sessionId, featureId, scenarioIndex, stepIndex, status, modifiedBy',
 });
 
 export default db;
