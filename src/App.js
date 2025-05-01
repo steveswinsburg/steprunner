@@ -17,9 +17,10 @@ function App() {
 
 
   return (
+    <div className="d-flex flex-column min-vh-100">
     <Router>
       <Header user={user} onLogout={logout} />
-        <main className="container my-4">
+        <main className="container my-4 flex-grow-1">
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/"
@@ -47,6 +48,7 @@ function App() {
         </main> 
       <Footer />
     </Router>
+    </div>
   );
 }
 
