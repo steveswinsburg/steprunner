@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button, ButtonGroup } from 'react-bootstrap';
-import { CheckCircleFill, XCircleFill, SkipForwardFill, QuestionCircleFill } from 'react-bootstrap-icons';
+import { FaCheckCircle, FaTimesCircle, FaForward, FaQuestionCircle } from 'react-icons/fa';
 import DragDropZone from '../components/DragDropZone';
 import FeatureSidebar from '../components/FeatureSidebar';
 import db from '../db/indexedDb';
@@ -183,16 +183,16 @@ function SessionViewer() {
                   <h5>Scenario: {sc.title}</h5>
                   <ButtonGroup>
                     <Button size="sm" variant="success" onClick={() => handleMarkAllInScenario(sIdx, 'pass')}>
-                      <CheckCircleFill className="me-1" /> All
+                      <FaCheckCircle className="me-1" /> All
                     </Button>
                     <Button size="sm" variant="danger" onClick={() => handleMarkAllInScenario(sIdx, 'fail')}>
-                      <XCircleFill className="me-1" /> All
+                      <FaTimesCircle className="me-1" /> All
                     </Button>
                     <Button size="sm" variant="warning" onClick={() => handleMarkAllInScenario(sIdx, 'skip')}>
-                      <SkipForwardFill className="me-1" /> All
+                      <FaForward className="me-1" /> All
                     </Button>
                     <Button size="sm" variant="info" onClick={() => handleMarkAllInScenario(sIdx, 'undo')}>
-                      <QuestionCircleFill className="me-1" /> All
+                      <FaQuestionCircle className="me-1" /> All
                     </Button>
                   </ButtonGroup>
                 </div>
@@ -204,10 +204,10 @@ function SessionViewer() {
                       <li key={stepIdx} style={getStepStyle(status)} className="mb-1">
                         {highlightKeyword(step)}{' '}
                         <ButtonGroup size="sm">
-                          <Button variant={status === 'pass' ? 'success' : 'outline-success'} onClick={() => handleMarkStep(sIdx, stepIdx, 'pass')}><CheckCircleFill /></Button>
-                          <Button variant={status === 'fail' ? 'danger' : 'outline-danger'} onClick={() => handleMarkStep(sIdx, stepIdx, 'fail')}><XCircleFill /></Button>
-                          <Button variant={status === 'skip' ? 'warning' : 'outline-warning'} onClick={() => handleMarkStep(sIdx, stepIdx, 'skip')}><SkipForwardFill /></Button>
-                          <Button variant={status === 'undo' ? 'info' : 'outline-info'} onClick={() => handleMarkStep(sIdx, stepIdx, 'undo')}><QuestionCircleFill /></Button>
+                          <Button variant={status === 'pass' ? 'success' : 'outline-success'} onClick={() => handleMarkStep(sIdx, stepIdx, 'pass')}><FaCheckCircle /></Button>
+                          <Button variant={status === 'fail' ? 'danger' : 'outline-danger'} onClick={() => handleMarkStep(sIdx, stepIdx, 'fail')}><FaTimesCircle /></Button>
+                          <Button variant={status === 'skip' ? 'warning' : 'outline-warning'} onClick={() => handleMarkStep(sIdx, stepIdx, 'skip')}><FaForward /></Button>
+                          <Button variant={status === 'undo' ? 'info' : 'outline-info'} onClick={() => handleMarkStep(sIdx, stepIdx, 'undo')}><FaQuestionCircle /></Button>
                         </ButtonGroup>
                       </li>
                     );
