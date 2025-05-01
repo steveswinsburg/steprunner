@@ -5,18 +5,44 @@ import Footer from './components/Footer';
 import Home from './pages/Home';
 import StartSession from './pages/StartSession';
 import SessionViewer from './pages/SessionViewer';
-import Login from './components/Login';
+import ProtectedRoute from './components/ProtectedRoute';
+import LoginPage from './components/LoginPage';
+import useAuth from './hooks/useAuth';
 
 function App() {
+
+  const { user, authChecked, logout } = useAuth();
+
+  if (!authChecked) return <div>Loading...</div>;
+
+
   return (
     <Router>
-      <Header />
+      <Header user={user} onLogout={logout} />
         <main className="container my-4">
-          <Login />
           <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/start" element={<StartSession />} />
-            <Route path="/session/:sessionId" element={<SessionViewer />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/"
+              element={
+                <ProtectedRoute user={user}>
+                  <Home />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/start"
+              element={
+                <ProtectedRoute user={user}>
+                  <StartSession />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/session/:sessionId"
+              element={
+                <ProtectedRoute user={user}>
+                  <SessionViewer />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </main> 
       <Footer />
