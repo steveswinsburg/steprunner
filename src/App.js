@@ -5,18 +5,20 @@ import Footer from './components/Footer';
 import Home from './pages/Home';
 import StartSession from './pages/StartSession';
 import SessionViewer from './pages/SessionViewer';
+import Login from './components/Login';
 
 function App() {
   return (
     <Router>
       <Header />
-      <main className="container my-4">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/start" element={<StartSession />} />
-          <Route path="/session/:sessionId" element={<SessionViewer />} />
-        </Routes>
-      </main>
+        <main className="container my-4">
+          <Login />
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/start" element={<StartSession />} />
+            <Route path="/session/:sessionId" element={<SessionViewer />} />
+          </Routes>
+        </main> 
       <Footer />
     </Router>
   );
