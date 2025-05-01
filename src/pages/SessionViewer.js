@@ -6,6 +6,7 @@ import DragDropZone from '../components/DragDropZone';
 import FeatureSidebar from '../components/FeatureSidebar';
 import db from '../db/indexedDb';
 import parseFeature from '../utils/parseFeature';
+import { auth } from '../firebase';
 
 function SessionViewer() {
   const { sessionId } = useParams();
@@ -62,13 +63,15 @@ function SessionViewer() {
 
   const handleMarkStep = async (scenarioIndex, stepIndex, status) => {
     const key = `${scenarioIndex}-${stepIndex}`;
+    const currentUser = auth.currentUser;
 
     await db.steps.put({
       sessionId: Number(sessionId),
       featureId: selectedFeature.id,
       scenarioIndex,
       stepIndex,
-      status
+      status,
+      modifiedBy: currentUser?.displayName || currentUser?.email || 'Unknown'
     });
 
     setStepResults(prev => ({
@@ -79,6 +82,7 @@ function SessionViewer() {
 
   const handleMarkAllInScenario = async (scenarioIndex, status) => {
     const stepCount = parsed?.scenarios?.[scenarioIndex]?.steps?.length || 0;
+    const currentUser = auth.currentUser;
 
     const updates = [];
     for (let stepIndex = 0; stepIndex < stepCount; stepIndex++) {
@@ -87,7 +91,8 @@ function SessionViewer() {
         featureId: selectedFeature.id,
         scenarioIndex,
         stepIndex,
-        status
+        status,
+        modifiedBy: currentUser?.displayName || currentUser?.email || 'Unknown'
       });
     }
 
