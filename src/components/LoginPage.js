@@ -1,19 +1,22 @@
 import React, { useEffect } from 'react';
-import { Container, Row, Col, Card, Button } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Alert } from 'react-bootstrap';
 import { FaGithub, FaGoogle } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import '../styles/LoginPage.css';
 
 const LoginPage = () => {
-  const { user, loginWithGoogle, loginWithGitHub } = useAuth();
+  const { user, loginWithGoogle, loginWithGitHub, authError } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect on login
+  
   useEffect(() => {
+    
+    // redirect on login
     if (user) {
       navigate('/', { replace: true });
     }
+
   }, [user, navigate]);
 
   return (
@@ -36,6 +39,18 @@ const LoginPage = () => {
                   </Button>
                 </div>
               </Card.Body>
+
+                {authError?.code === 'auth/account-exists-with-different-credential' && (
+                    <Alert variant="warning" className="mt-3">
+                        This email is already linked to another login method. Please use that method to sign in.
+                    </Alert>
+                    )}
+
+                    {authError && authError.code !== 'auth/account-exists-with-different-credential' && (
+                    <Alert variant="danger" className="mt-3">
+                        {authError.message}
+                    </Alert>
+                )}
             </Card>
           </Col>
         </Row>
