@@ -12,6 +12,7 @@ import {
 export default function useAuth() {
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [authError, setAuthError] = useState(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
@@ -21,13 +22,30 @@ export default function useAuth() {
     return unsubscribe;
   }, []);
 
-  const loginWithGoogle = () => signInWithPopup(auth, new GoogleAuthProvider());
-  const loginWithGitHub = () => signInWithPopup(auth, new GithubAuthProvider());
+  const loginWithGoogle = async () => {
+    setAuthError(null);
+    try {
+      await signInWithPopup(auth, new GoogleAuthProvider());
+    } catch (error) {
+      setAuthError(error);
+    }
+  };
+
+  const loginWithGitHub = async () => {
+    setAuthError(null);
+    try {
+      await signInWithPopup(auth, new GithubAuthProvider());
+    } catch (error) {
+      setAuthError(error);
+    }
+  };
+
   const logout = () => signOut(auth);
 
   return {
     user,
     authChecked,
+    authError,
     loginWithGoogle,
     loginWithGitHub,
     logout
