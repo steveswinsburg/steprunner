@@ -1,4 +1,3 @@
-import React, { useEffect, useState } from 'react';
 import { ListGroup } from 'react-bootstrap';
 import { useLiveQuery } from 'dexie-react-hooks';
 import db from '../db/indexedDb';
@@ -16,7 +15,7 @@ function FeatureSidebar({ features, selectedId, onSelect }) {
 
   return (
     <>
-      <div style={{ minWidth: '250px' }}>
+     <div className="flex-shrink-0 overflow-hidden mb-5" style={{ width: '295px' }}>
         <h5 className="p-3">Features</h5>
         <ListGroup variant="flush">
           {features.map((f) => (
@@ -25,16 +24,18 @@ function FeatureSidebar({ features, selectedId, onSelect }) {
               active={f.id === selectedId}
               action
               onClick={() => onSelect(f)}
+              className="text-truncate"
             >
-              {f.title}
+              
+             {f.title}
+
             </ListGroup.Item>
           ))}
         </ListGroup>
       </div>
-
-{/*       
-      <div className="overflow-auto mb-3" style={{ maxHeight: '300px' }}>
-        <h6 className="text-muted">Activity</h6>
+      
+      <div className="overflow-auto mb-3" style={{ maxHeight: '500px', width: '295px' }}>
+        <h5 className="p-3">Activity</h5>
         <ul className="list-unstyled small mb-0">
           {activities.map((log, idx) => (
             <li key={idx}>
@@ -47,7 +48,7 @@ function FeatureSidebar({ features, selectedId, onSelect }) {
             </li>
           ))}
         </ul>
-      </div>     */}
+      </div>
     </>
   );
 }

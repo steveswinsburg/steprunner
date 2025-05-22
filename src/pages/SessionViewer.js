@@ -162,7 +162,7 @@ function SessionViewer() {
 
   return (
     <div style={{ display: 'flex' }}>
-      <div className="d-flex flex-column border-end pe-2" style={{ minWidth: '180px' }}>
+      <div className="d-flex flex-column border-end pe-2" style={{ width: '300px', flexShrink: 0 }}>
         <FeatureSidebar
           features={features}
           selectedId={selectedFeature?.id}
@@ -170,7 +170,7 @@ function SessionViewer() {
         />
       </div>
 
-      <div className="p-4 flex-grow-1">
+      <div className="p-4 flex-grow-1" style={{ minWidth: 0 }}>
         <div className="d-flex justify-content-between align-items-center">
           <h2>Session #{sessionId}</h2>
           <div className="d-flex gap-2">
