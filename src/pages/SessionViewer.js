@@ -74,6 +74,8 @@ function SessionViewer() {
       modifiedBy: currentUser?.displayName || currentUser?.email || 'Unknown'
     });
 
+    await logActivity(`Marked step ${scenarioIndex + 1}.${stepIndex + 1} as "${status}"`);
+
     setStepResults(prev => ({
       ...prev,
       [key]: status
@@ -97,6 +99,8 @@ function SessionViewer() {
     }
 
     await db.steps.bulkPut(updates);
+
+    await logActivity(`Marked all steps in Scenario ${scenarioIndex + 1} as "${status}"`);
 
     setStepResults(prev => {
       const updated = { ...prev };
@@ -142,6 +146,18 @@ function SessionViewer() {
         {words.join(' ')}
       </span>
     );
+  };
+
+
+  const logActivity = async (message) => {
+    const user = auth.currentUser;
+
+    await db.activities.add({
+      sessionId: Number(sessionId),
+      timestamp: new Date().toISOString(),
+      user: user?.displayName || user?.email || 'Unknown',
+      message
+    });
   };
 
   return (
@@ -201,12 +217,12 @@ function SessionViewer() {
                     </Button>
                   </ButtonGroup>
                 </div>
-                <ul>
+                <ul >
                   {sc.steps.map((step, stepIdx) => {
                     const key = `${sIdx}-${stepIdx}`;
                     const status = stepResults[key];
                     return (
-                      <li key={stepIdx} style={getStepStyle(status)} className="mb-1">
+                      <li key={stepIdx} style={getStepStyle(status)}>
                         {highlightKeyword(step)}{' '}
                         <ButtonGroup size="sm">
                           <Button variant={status === 'pass' ? 'success' : 'outline-success'} onClick={() => handleMarkStep(sIdx, stepIdx, 'pass')}><FaCheckCircle /></Button>
