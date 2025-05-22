@@ -9,7 +9,7 @@ function Header({ user, onLogout }) {
   return (
     <Navbar bg="dark" variant="dark" expand="lg">
       <Container>
-        <Navbar.Brand as={Link} to="/">StepRunner</Navbar.Brand>
+        <Navbar.Brand as={Link} to="/">StepRunner 🏃‍♂️</Navbar.Brand>
         <Nav className="ms-auto">
           {user && (
             <Nav.Item className="d-flex align-items-center gap-2">
