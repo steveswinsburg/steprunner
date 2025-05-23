@@ -4,7 +4,10 @@
 
 StepRunner is a lightweight app for exploring and running `.feature` files manually. It helps QA engineers, product owners, and developers walk through Gherkin test scenarios step by step - Ideal for exploratory testing, documentation walkthroughs, or scenarios not ready for automation.
 
+https://steprunner-abc1f.web.app/
+
 [![Node.js CI](https://github.com/steveswinsburg/steprunner/actions/workflows/node.js.yml/badge.svg)](https://github.com/steveswinsburg/steprunner/actions/workflows/node.js.yml)
+[![Deploy to Firebase Hosting on merge](https://github.com/steveswinsburg/steprunner/actions/workflows/firebase-hosting-merge.yml/badge.svg)](https://github.com/steveswinsburg/steprunner/actions/workflows/firebase-hosting-merge.yml)
 
 ## 🚀 Features
 
