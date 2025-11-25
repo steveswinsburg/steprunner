@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Button, ButtonGroup } from 'react-bootstrap';
+import { Button, ButtonGroup, Image, Badge, Form } from 'react-bootstrap';
 import { FaCheckCircle, FaTimesCircle, FaForward, FaQuestionCircle } from 'react-icons/fa';
 import DragDropZone from '../components/DragDropZone';
 import FeatureSidebar from '../components/FeatureSidebar';
 import db from '../db/indexedDb';
 import parseFeature from '../utils/parseFeature';
+import parseCucumberReport from '../utils/parseCucumberReport';
+import { downloadCucumberReport } from '../utils/exportCucumberReport';
 import { auth } from '../firebase';
 
 function SessionViewer() {
@@ -15,6 +17,9 @@ function SessionViewer() {
   const [selectedFeature, setSelectedFeature] = useState(null);
   const [parsed, setParsed] = useState(null);
   const [stepResults, setStepResults] = useState({});
+  const [stepMetadata, setStepMetadata] = useState({});
+  const [scenarioImages, setScenarioImages] = useState({});
+  const [dragOverStep, setDragOverStep] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -29,13 +34,67 @@ function SessionViewer() {
   }, [sessionId]);
 
   const handleFileUpload = async (files) => {
-    const featureData = files.map(file => ({
-      sessionId: Number(sessionId),
-      title: file.name,
-      content: file.content
-    }));
+    for (const file of files) {
+      if (file.type === 'cucumber-report') {
+        // Parse Cucumber JSON report
+        const parsedFeatures = parseCucumberReport(file.content);
+        
+        // Store each feature from the report
+        for (const parsedFeature of parsedFeatures) {
+          // Create feature record
+          const featureId = await db.features.add({
+            sessionId: Number(sessionId),
+            title: parsedFeature.title,
+            content: JSON.stringify(parsedFeature) // Store parsed data as content
+          });
 
-    await db.features.bulkAdd(featureData);
+          // Store steps with metadata
+          for (let sIdx = 0; sIdx < parsedFeature.scenarios.length; sIdx++) {
+            const scenario = parsedFeature.scenarios[sIdx];
+            
+            for (let stepIdx = 0; stepIdx < scenario.steps.length; stepIdx++) {
+              const metadata = scenario.stepMetadata?.[stepIdx] || {};
+              
+              await db.steps.add({
+                sessionId: Number(sessionId),
+                featureId,
+                scenarioIndex: sIdx,
+                stepIndex: stepIdx,
+                status: metadata.status || 'undo',
+                modifiedBy: 'Imported from report',
+                duration: metadata.duration,
+                errorMessage: metadata.errorMessage,
+                matchLocation: metadata.matchLocation
+              });
+            }
+
+            // Store images from the report
+            if (scenario.images && scenario.images.length > 0) {
+              for (const image of scenario.images) {
+                await db.images.add({
+                  sessionId: Number(sessionId),
+                  featureId,
+                  scenarioIndex: sIdx,
+                  stepIndex: image.stepIndex,
+                  imageData: image.imageData,
+                  mimeType: image.mimeType,
+                  uploadedAt: new Date().toISOString()
+                });
+              }
+            }
+          }
+        }
+      } else {
+        // Handle regular .feature file
+        await db.features.add({
+          sessionId: Number(sessionId),
+          title: file.name,
+          content: file.content
+        });
+      }
+    }
+
+    // Reload features
     const loaded = await db.features
       .where('sessionId')
       .equals(Number(sessionId))
@@ -45,7 +104,18 @@ function SessionViewer() {
 
   const handleSelectFeature = async (feature) => {
     setSelectedFeature(feature);
-    const parsedFeature = parseFeature(feature.content);
+    
+    // Check if content is JSON (from Cucumber report) or plain text (.feature file)
+    let parsedFeature;
+    try {
+      const jsonContent = JSON.parse(feature.content);
+      // If it parses as JSON, it's from a Cucumber report
+      parsedFeature = jsonContent;
+    } catch {
+      // Otherwise, parse as .feature file
+      parsedFeature = parseFeature(feature.content);
+    }
+    
     setParsed(parsedFeature);
 
     const steps = await db.steps
@@ -53,12 +123,35 @@ function SessionViewer() {
       .toArray();
 
     const mapped = {};
+    const metadata = {};
     steps.forEach(s => {
       const key = `${s.scenarioIndex}-${s.stepIndex}`;
       mapped[key] = s.status;
+      metadata[key] = {
+        duration: s.duration,
+        errorMessage: s.errorMessage,
+        matchLocation: s.matchLocation
+      };
     });
 
     setStepResults(mapped);
+    setStepMetadata(metadata);
+
+    // Load images for this feature
+    const images = await db.images
+      .where({ sessionId: Number(sessionId), featureId: feature.id })
+      .toArray();
+
+    const imagesByScenario = {};
+    images.forEach(img => {
+      const key = `${img.scenarioIndex}-${img.stepIndex}`;
+      if (!imagesByScenario[key]) {
+        imagesByScenario[key] = [];
+      }
+      imagesByScenario[key].push(img);
+    });
+
+    setScenarioImages(imagesByScenario);
   };
 
   const handleMarkStep = async (scenarioIndex, stepIndex, status) => {
@@ -124,7 +217,13 @@ function SessionViewer() {
   };
 
   const handleExportSession = async () => {
-    alert('Export coming soon!');
+    try {
+      await downloadCucumberReport(Number(sessionId));
+      await logActivity('Exported session as Cucumber report');
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert('Failed to export session. See console for details.');
+    }
   };
 
   const getStepStyle = (status) => {
@@ -142,7 +241,7 @@ function SessionViewer() {
     const firstWord = words.shift();
     return (
       <span>
-        <span style={{ color: '#fd7e14', fontWeight: 'normal' }}>{firstWord}</span>{' '}
+        <span style={{ color: '#0056b3', fontWeight: 'bold' }}>{firstWord}</span>{' '}
         {words.join(' ')}
       </span>
     );
@@ -160,8 +259,149 @@ function SessionViewer() {
     });
   };
 
+  const handleImageUpload = async (scenarioIndex, stepIndex, event) => {
+    const file = event.target.files[0];
+    if (!file || !file.type.startsWith('image/')) {
+      return;
+    }
+
+    // Read image as base64
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const base64Data = e.target.result.split(',')[1]; // Remove data:image/...;base64, prefix
+      
+      await db.images.add({
+        sessionId: Number(sessionId),
+        featureId: selectedFeature.id,
+        scenarioIndex,
+        stepIndex,
+        imageData: base64Data,
+        mimeType: file.type,
+        uploadedAt: new Date().toISOString()
+      });
+
+      // Reload images
+      const images = await db.images
+        .where({ sessionId: Number(sessionId), featureId: selectedFeature.id })
+        .toArray();
+
+      const imagesByScenario = {};
+      images.forEach(img => {
+        const key = `${img.scenarioIndex}-${img.stepIndex}`;
+        if (!imagesByScenario[key]) {
+          imagesByScenario[key] = [];
+        }
+        imagesByScenario[key].push(img);
+      });
+
+      setScenarioImages(imagesByScenario);
+      
+      await logActivity(`Added image to step ${scenarioIndex + 1}.${stepIndex + 1}`);
+    };
+    
+    reader.readAsDataURL(file);
+  };
+
+  const handleDeleteImage = async (imageId, scenarioIndex, stepIndex) => {
+    await db.images.delete(imageId);
+    
+    // Reload images
+    const images = await db.images
+      .where({ sessionId: Number(sessionId), featureId: selectedFeature.id })
+      .toArray();
+
+    const imagesByScenario = {};
+    images.forEach(img => {
+      const key = `${img.scenarioIndex}-${img.stepIndex}`;
+      if (!imagesByScenario[key]) {
+        imagesByScenario[key] = [];
+      }
+      imagesByScenario[key].push(img);
+    });
+
+    setScenarioImages(imagesByScenario);
+    
+    await logActivity(`Deleted image from step ${scenarioIndex + 1}.${stepIndex + 1}`);
+  };
+
+  const handleDragOver = (e, scenarioIndex, stepIndex) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverStep(`${scenarioIndex}-${stepIndex}`);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverStep(null);
+  };
+
+  const handleDrop = async (e, scenarioIndex, stepIndex) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverStep(null);
+
+    const files = Array.from(e.dataTransfer.files);
+    const imageFile = files.find(file => file.type.startsWith('image/'));
+    
+    if (!imageFile) {
+      return;
+    }
+
+    // Read image as base64
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const base64Data = e.target.result.split(',')[1];
+      
+      await db.images.add({
+        sessionId: Number(sessionId),
+        featureId: selectedFeature.id,
+        scenarioIndex,
+        stepIndex,
+        imageData: base64Data,
+        mimeType: imageFile.type,
+        uploadedAt: new Date().toISOString()
+      });
+
+      // Reload images
+      const images = await db.images
+        .where({ sessionId: Number(sessionId), featureId: selectedFeature.id })
+        .toArray();
+
+      const imagesByScenario = {};
+      images.forEach(img => {
+        const key = `${img.scenarioIndex}-${img.stepIndex}`;
+        if (!imagesByScenario[key]) {
+          imagesByScenario[key] = [];
+        }
+        imagesByScenario[key].push(img);
+      });
+
+      setScenarioImages(imagesByScenario);
+      
+      await logActivity(`Added image to step ${scenarioIndex + 1}.${stepIndex + 1}`);
+    };
+    
+    reader.readAsDataURL(imageFile);
+  };
+
   return (
     <div style={{ display: 'flex' }}>
+      <style>{`
+        .image-container .delete-image-btn {
+          opacity: 0;
+          transition: opacity 0.2s;
+        }
+        .image-container:hover .delete-image-btn {
+          opacity: 1 !important;
+        }
+        .step-drag-over {
+          background-color: #e3f2fd !important;
+          border: 2px dashed #2196f3 !important;
+          padding: 8px;
+          border-radius: 4px;
+        }
+      `}</style>
       <div className="d-flex flex-column border-end pe-2" style={{ width: '300px', flexShrink: 0 }}>
         <FeatureSidebar
           features={features}
@@ -198,42 +438,207 @@ function SessionViewer() {
         {parsed && (
           <div className="mt-4">
             <h4>Feature: {parsed.title}</h4>
+            
+            {/* Feature description */}
+            {parsed.description && (
+              <div className="mb-4" style={{ 
+                padding: '12px', 
+                backgroundColor: '#f8f9fa', 
+                borderLeft: '3px solid #6c757d',
+                whiteSpace: 'pre-line',
+                fontStyle: 'italic'
+              }}>
+                {parsed.description}
+              </div>
+            )}
+            
+            {/* Background section */}
+            {parsed.background && (
+              <div className="mb-4">
+                <h5 style={{ color: '#6c757d' }}>Background:</h5>
+                <div style={{ marginLeft: '20px' }}>
+                  {parsed.background.steps.map((step, idx) => (
+                    <div 
+                      key={`bg-${idx}`}
+                      style={{
+                        padding: '8px',
+                        marginBottom: '6px',
+                        borderRadius: '4px',
+                        backgroundColor: '#e9ecef',
+                        border: '1px solid #ced4da',
+                        fontStyle: 'italic'
+                      }}
+                    >
+                      {highlightKeyword(step)}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
             {parsed.scenarios.map((sc, sIdx) => (
               <div key={sIdx} className="mb-4">
-                <div className="d-flex justify-content-between align-items-center">
+                <div className="d-flex justify-content-between align-items-center mb-3">
                   <h5>Scenario: {sc.title}</h5>
                   <ButtonGroup>
-                    <Button size="sm" variant="success" onClick={() => handleMarkAllInScenario(sIdx, 'pass')}>
+                    <Button 
+                      size="sm" 
+                      variant="success" 
+                      onClick={() => handleMarkAllInScenario(sIdx, 'pass')}
+                      title="Mark all steps in this scenario as Passed"
+                    >
                       <FaCheckCircle className="me-1" /> All
                     </Button>
-                    <Button size="sm" variant="danger" onClick={() => handleMarkAllInScenario(sIdx, 'fail')}>
+                    <Button 
+                      size="sm" 
+                      variant="danger" 
+                      onClick={() => handleMarkAllInScenario(sIdx, 'fail')}
+                      title="Mark all steps in this scenario as Failed"
+                    >
                       <FaTimesCircle className="me-1" /> All
                     </Button>
-                    <Button size="sm" variant="warning" onClick={() => handleMarkAllInScenario(sIdx, 'skip')}>
+                    <Button 
+                      size="sm" 
+                      variant="warning" 
+                      onClick={() => handleMarkAllInScenario(sIdx, 'skip')}
+                      title="Mark all steps in this scenario as Skipped"
+                    >
                       <FaForward className="me-1" /> All
                     </Button>
-                    <Button size="sm" variant="info" onClick={() => handleMarkAllInScenario(sIdx, 'undo')}>
+                    <Button 
+                      size="sm" 
+                      variant="info" 
+                      onClick={() => handleMarkAllInScenario(sIdx, 'undo')}
+                      title="Mark all steps in this scenario as Undefined"
+                    >
                       <FaQuestionCircle className="me-1" /> All
                     </Button>
                   </ButtonGroup>
                 </div>
-                <ul >
+                <div>
                   {sc.steps.map((step, stepIdx) => {
                     const key = `${sIdx}-${stepIdx}`;
                     const status = stepResults[key];
+                    const metadata = stepMetadata[key] || {};
+                    const images = scenarioImages[key] || [];
+                    const isDragOver = dragOverStep === key;
+                    
                     return (
-                      <li key={stepIdx} style={getStepStyle(status)}>
-                        {highlightKeyword(step)}{' '}
-                        <ButtonGroup size="sm">
-                          <Button variant={status === 'pass' ? 'success' : 'outline-success'} onClick={() => handleMarkStep(sIdx, stepIdx, 'pass')}><FaCheckCircle /></Button>
-                          <Button variant={status === 'fail' ? 'danger' : 'outline-danger'} onClick={() => handleMarkStep(sIdx, stepIdx, 'fail')}><FaTimesCircle /></Button>
-                          <Button variant={status === 'skip' ? 'warning' : 'outline-warning'} onClick={() => handleMarkStep(sIdx, stepIdx, 'skip')}><FaForward /></Button>
-                          <Button variant={status === 'undo' ? 'info' : 'outline-info'} onClick={() => handleMarkStep(sIdx, stepIdx, 'undo')}><FaQuestionCircle /></Button>
-                        </ButtonGroup>
-                      </li>
+                      <div 
+                        key={stepIdx} 
+                        style={{
+                          ...getStepStyle(status),
+                          transition: 'all 0.2s',
+                          padding: '12px',
+                          marginBottom: '8px',
+                          borderRadius: '4px',
+                          border: '1px solid #dee2e6'
+                        }}
+                        className={isDragOver ? 'step-drag-over' : ''}
+                        onDragOver={(e) => handleDragOver(e, sIdx, stepIdx)}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDrop(e, sIdx, stepIdx)}
+                      >
+                        <div className="d-flex align-items-start justify-content-between">
+                          <div className="flex-grow-1">
+                            {highlightKeyword(step)}{' '}
+                            
+                            {/* Display metadata if available */}
+                            {metadata.duration && (
+                              <Badge bg="secondary" className="ms-2">
+                                {(metadata.duration / 1000000).toFixed(0)}ms
+                              </Badge>
+                            )}
+                            {metadata.matchLocation && (
+                              <small className="ms-2 text-muted">
+                                {metadata.matchLocation}
+                              </small>
+                            )}
+                          </div>
+                          
+                          <ButtonGroup size="sm" className="ms-2">
+                            <Button 
+                              variant={status === 'pass' ? 'success' : 'secondary'} 
+                              style={status !== 'pass' ? { opacity: 0.6 } : {}}
+                              onClick={() => handleMarkStep(sIdx, stepIdx, 'pass')}
+                              title="Mark as Passed"
+                            >
+                              <FaCheckCircle />
+                            </Button>
+                            <Button 
+                              variant={status === 'fail' ? 'danger' : 'secondary'} 
+                              style={status !== 'fail' ? { opacity: 0.6 } : {}}
+                              onClick={() => handleMarkStep(sIdx, stepIdx, 'fail')}
+                              title="Mark as Failed"
+                            >
+                              <FaTimesCircle />
+                            </Button>
+                            <Button 
+                              variant={status === 'skip' ? 'warning' : 'secondary'} 
+                              style={status !== 'skip' ? { opacity: 0.6 } : {}}
+                              onClick={() => handleMarkStep(sIdx, stepIdx, 'skip')}
+                              title="Mark as Skipped"
+                            >
+                              <FaForward />
+                            </Button>
+                            <Button 
+                              variant={status === 'undo' ? 'info' : 'secondary'} 
+                              style={status !== 'undo' ? { opacity: 0.6 } : {}}
+                              onClick={() => handleMarkStep(sIdx, stepIdx, 'undo')}
+                              title="Mark as Undefined"
+                            >
+                              <FaQuestionCircle />
+                            </Button>
+                          </ButtonGroup>
+                        </div>
+                        
+                        {metadata.errorMessage && (
+                          <div className="text-danger small mt-2">
+                            {metadata.errorMessage}
+                          </div>
+                        )}
+                        
+                        {/* Display images */}
+                        {images.length > 0 && (
+                          <div className="mt-2 d-flex gap-2 flex-wrap">
+                            {images.map((img, imgIdx) => (
+                              <div 
+                                key={imgIdx} 
+                                style={{ position: 'relative' }}
+                                className="image-container"
+                              >
+                                <Image
+                                  src={`data:${img.mimeType};base64,${img.imageData}`}
+                                  thumbnail
+                                  style={{ maxWidth: '200px', cursor: 'pointer' }}
+                                  onClick={() => window.open(`data:${img.mimeType};base64,${img.imageData}`, '_blank')}
+                                />
+                                <Button
+                                  variant="danger"
+                                  size="sm"
+                                  className="delete-image-btn"
+                                  style={{ 
+                                    position: 'absolute', 
+                                    top: '5px', 
+                                    right: '5px'
+                                  }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (window.confirm('Are you sure you want to delete this image?')) {
+                                      handleDeleteImage(img.id, sIdx, stepIdx);
+                                    }
+                                  }}
+                                >
+                                  ×
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
-                </ul>
+                </div>
               </div>
             ))}
           </div>
