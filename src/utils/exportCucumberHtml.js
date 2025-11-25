@@ -483,13 +483,11 @@ export async function generateCucumberHtml(cucumberJson) {
 export async function downloadCucumberHtmlReport(sessionId, cucumberJson) {
   const html = await generateCucumberHtml(cucumberJson);
   
-  const blob = new Blob([html], { type: 'text/html' });
-  const url = URL.createObjectURL(blob);
+  const htmlDataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
   const a = document.createElement('a');
-  a.href = url;
+  a.href = htmlDataUrl;
   a.download = `cucumber-report-${sessionId}.html`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  URL.revokeObjectURL(url);
 }
