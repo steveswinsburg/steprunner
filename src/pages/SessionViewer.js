@@ -357,6 +357,33 @@ function SessionViewer() {
           padding: 8px;
           border-radius: 4px;
         }
+        .btn-step-action {
+          transition: all 0.2s;
+        }
+        .btn-step-action.btn-pass-hint:hover {
+          background-color: #28a745 !important;
+          opacity: 0.85 !important;
+          border-color: #28a745 !important;
+          color: white !important;
+        }
+        .btn-step-action.btn-fail-hint:hover {
+          background-color: #dc3545 !important;
+          opacity: 0.85 !important;
+          border-color: #dc3545 !important;
+          color: white !important;
+        }
+        .btn-step-action.btn-skip-hint:hover {
+          background-color: #ffc107 !important;
+          opacity: 0.9 !important;
+          border-color: #ffc107 !important;
+          color: #212529 !important;
+        }
+        .btn-step-action.btn-undo-hint:hover {
+          background-color: #17a2b8 !important;
+          opacity: 0.85 !important;
+          border-color: #17a2b8 !important;
+          color: white !important;
+        }
       `}</style>
       <div className="d-flex flex-column border-end pe-2" style={{ width: '300px', flexShrink: 0 }}>
         <FeatureSidebar
@@ -482,6 +509,7 @@ function SessionViewer() {
                     return (
                       <div 
                         key={stepIdx} 
+                        className={isDragOver ? 'step-drag-over' : ''}
                         style={{
                           ...getStepStyle(status),
                           transition: 'all 0.2s',
@@ -490,7 +518,6 @@ function SessionViewer() {
                           borderRadius: '4px',
                           border: '1px solid #dee2e6'
                         }}
-                        className={isDragOver ? 'step-drag-over' : ''}
                         onDragOver={(e) => handleDragOver(e, sIdx, stepIdx)}
                         onDragLeave={handleDragLeave}
                         onDrop={(e) => handleDrop(e, sIdx, stepIdx)}
@@ -515,6 +542,7 @@ function SessionViewer() {
                           <ButtonGroup size="sm" className="ms-2">
                             <Button 
                               variant={status === 'pass' ? 'success' : 'secondary'} 
+                              className={status !== 'pass' ? 'btn-step-action btn-pass-hint' : ''}
                               style={status !== 'pass' ? { opacity: 0.6 } : {}}
                               onClick={() => handleMarkStep(sIdx, stepIdx, 'pass')}
                               title="Mark as Passed"
@@ -523,6 +551,7 @@ function SessionViewer() {
                             </Button>
                             <Button 
                               variant={status === 'fail' ? 'danger' : 'secondary'} 
+                              className={status !== 'fail' ? 'btn-step-action btn-fail-hint' : ''}
                               style={status !== 'fail' ? { opacity: 0.6 } : {}}
                               onClick={() => handleMarkStep(sIdx, stepIdx, 'fail')}
                               title="Mark as Failed"
@@ -531,6 +560,7 @@ function SessionViewer() {
                             </Button>
                             <Button 
                               variant={status === 'skip' ? 'warning' : 'secondary'} 
+                              className={status !== 'skip' ? 'btn-step-action btn-skip-hint' : ''}
                               style={status !== 'skip' ? { opacity: 0.6 } : {}}
                               onClick={() => handleMarkStep(sIdx, stepIdx, 'skip')}
                               title="Mark as Skipped"
@@ -539,6 +569,7 @@ function SessionViewer() {
                             </Button>
                             <Button 
                               variant={status === 'undo' ? 'info' : 'secondary'} 
+                              className={status !== 'undo' ? 'btn-step-action btn-undo-hint' : ''}
                               style={status !== 'undo' ? { opacity: 0.6 } : {}}
                               onClick={() => handleMarkStep(sIdx, stepIdx, 'undo')}
                               title="Mark as Undefined"
