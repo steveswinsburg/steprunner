@@ -4,14 +4,18 @@ import { Card } from 'react-bootstrap';
 
 function DragDropZone({ onFiles }) {
   const onDrop = useCallback((acceptedFiles) => {
-    const featureFiles = acceptedFiles.filter(file => file.name.endsWith('.feature'));
+    // Accept both .feature and .json files
+    const validFiles = acceptedFiles.filter(file => 
+      file.name.endsWith('.feature') || file.name.endsWith('.json')
+    );
 
     // Read content of each file
     Promise.all(
-      featureFiles.map(file =>
+      validFiles.map(file =>
         file.text().then(text => ({
           name: file.name,
-          content: text
+          content: text,
+          type: file.name.endsWith('.json') ? 'cucumber-report' : 'feature-file'
         }))
       )
     ).then(results => {
@@ -22,7 +26,8 @@ function DragDropZone({ onFiles }) {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      'text/plain': ['.feature']
+      'text/plain': ['.feature'],
+      'application/json': ['.json']
     },
     multiple: true
   });
@@ -36,8 +41,8 @@ function DragDropZone({ onFiles }) {
       <input {...getInputProps()} />
       <p className="lead">
         {isDragActive
-          ? 'Drop the .feature files here...'
-          : 'Drag and drop your .feature files here, or click to select'}
+          ? 'Drop the files here...'
+          : 'Drag and drop your .feature files or cucumber-report.json here, or click to select'}
       </p>
     </Card>
   );

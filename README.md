@@ -1,8 +1,8 @@
 # 🏃‍♂️ StepRunner
 
-**A viewer and runner for Cucumber/Gherkin feature files.**
+**A viewer and runner for Cucumber/Gherkin feature files**
 
-StepRunner is a lightweight app for exploring and running `.feature` files manually. It helps QA engineers, product owners, and developers walk through Gherkin test scenarios step by step - Ideal for exploratory testing, documentation walkthroughs, or scenarios not ready for automation.
+StepRunner is an app for exploring and running `.feature` files manually. Upload feature files or Cucumber JSON reports, execute tests step-by-step, attach screenshots, and export results as browsable HTML reports. Ideal for exploratory testing, documentation walkthroughs, or scenarios not ready for automation.
 
 https://steprunner-abc1f.web.app/
 
@@ -11,22 +11,31 @@ https://steprunner-abc1f.web.app/
 
 ## 🚀 Features
 
-- 📂 Upload and parse `.feature` files
-- 🧾 Display features, scenarios, and steps in a clean UI
-- ✅ Manually mark steps as passed/failed/skipped one-by-one or in bulk
-- 🗂 Group and filter by feature or tag
-- 💾 Save and load sessions
-- 🔍 Syntax-highlighted Gherkin viewer
+- 📂 Upload `.feature` files or Cucumber JSON reports
+- 🧾 Display features, scenarios, and steps with descriptions and backgrounds
+- ✅ Mark steps as passed/failed/skipped/undefined individually or in bulk
+- � Attach images to steps via drag-and-drop
+- � Export as Cucumber JSON and HTML reports
 
 ## 📸 Screenshot
 
 <img src="screenshot.png" width="600px" />
 
 ## 🧠 How It Works
-1. Upload a .feature file or a zip of feature files
+1. Start a new session and upload `.feature` files or a `cucumber-report.json`
 2. Browse scenarios and steps via the UI
-3. Click to mark steps as passed, failed, or skipped
-4. Export results
+3. Mark steps as passed/failed/skipped as you execute tests
+4. Drag and drop screenshots onto steps for visual evidence
+5. Export your test session as JSON and HTML reports
+
+### 🔄 Hybrid Testing: Automated + Manual
+
+Got automated tests but some scenarios that need manual verification? StepRunner bridges the gap:
+- Import your Cucumber JSON report with automated test results already marked
+- Continue with manual steps that weren't automated
+- Drag and drop screenshots for manual verification
+- Export a complete report combining both automated and manual execution
+
 
 ## 📦 Getting Started
 
