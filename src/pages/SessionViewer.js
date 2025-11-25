@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Button, ButtonGroup, Image, Badge, Form } from 'react-bootstrap';
+import { Button, ButtonGroup, Image, Badge } from 'react-bootstrap';
 import { FaCheckCircle, FaTimesCircle, FaForward, FaQuestionCircle } from 'react-icons/fa';
 import DragDropZone from '../components/DragDropZone';
 import FeatureSidebar from '../components/FeatureSidebar';
@@ -247,7 +247,6 @@ function SessionViewer() {
     );
   };
 
-
   const logActivity = async (message) => {
     const user = auth.currentUser;
 
@@ -257,49 +256,6 @@ function SessionViewer() {
       user: user?.displayName || user?.email || 'Unknown',
       message
     });
-  };
-
-  const handleImageUpload = async (scenarioIndex, stepIndex, event) => {
-    const file = event.target.files[0];
-    if (!file || !file.type.startsWith('image/')) {
-      return;
-    }
-
-    // Read image as base64
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const base64Data = e.target.result.split(',')[1]; // Remove data:image/...;base64, prefix
-      
-      await db.images.add({
-        sessionId: Number(sessionId),
-        featureId: selectedFeature.id,
-        scenarioIndex,
-        stepIndex,
-        imageData: base64Data,
-        mimeType: file.type,
-        uploadedAt: new Date().toISOString()
-      });
-
-      // Reload images
-      const images = await db.images
-        .where({ sessionId: Number(sessionId), featureId: selectedFeature.id })
-        .toArray();
-
-      const imagesByScenario = {};
-      images.forEach(img => {
-        const key = `${img.scenarioIndex}-${img.stepIndex}`;
-        if (!imagesByScenario[key]) {
-          imagesByScenario[key] = [];
-        }
-        imagesByScenario[key].push(img);
-      });
-
-      setScenarioImages(imagesByScenario);
-      
-      await logActivity(`Added image to step ${scenarioIndex + 1}.${stepIndex + 1}`);
-    };
-    
-    reader.readAsDataURL(file);
   };
 
   const handleDeleteImage = async (imageId, scenarioIndex, stepIndex) => {

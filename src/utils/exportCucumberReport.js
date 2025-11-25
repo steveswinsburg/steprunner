@@ -125,22 +125,21 @@ function mapStatusToCucumber(status) {
 /**
  * Download the Cucumber report as JSON and HTML files
  */
-export async function downloadCucumberReport(sessionId, filename = 'cucumber-report.json') {
+export async function downloadCucumberReport(sessionId) {
   const report = await exportCucumberReport(sessionId);
   const json = JSON.stringify(report, null, 2);
   
   // Download JSON file
-  const jsonBlob = new Blob([json], { type: 'application/json' });
-  const jsonUrl = URL.createObjectURL(jsonBlob);
+  const jsonFilename = `cucumber-report-${sessionId}.json`;
+  const jsonDataUrl = 'data:application/json;charset=utf-8,' + encodeURIComponent(json);
   
   const jsonLink = document.createElement('a');
-  jsonLink.href = jsonUrl;
-  jsonLink.download = filename;
+  jsonLink.href = jsonDataUrl;
+  jsonLink.download = jsonFilename;
+  document.body.appendChild(jsonLink);
   jsonLink.click();
-  
-  URL.revokeObjectURL(jsonUrl);
+  document.body.removeChild(jsonLink);
   
   // Download HTML file
-  const htmlFilename = filename.replace('.json', '.html');
   await downloadCucumberHtmlReport(sessionId, report);
 }
