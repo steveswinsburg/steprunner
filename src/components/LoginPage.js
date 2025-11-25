@@ -25,11 +25,17 @@ const LoginPage = () => {
 
       <Container className="pt-5">
         <Row className="justify-content-center">
-          <Col xs={12} sm={8} md={6} lg={4}>
+          <Col xs={12} sm={10} md={8} lg={6}>
             <Card className="shadow-lg p-4 mt-5">
               <Card.Body className="text-center">
                 <Card.Title className="mb-4 fs-3">Welcome to StepRunner</Card.Title>
-                <p className="text-muted mb-4">Sign in to get started</p>
+                <p className="mb-4">
+                  StepRunner bridges the gap between automated and manual testing. 
+                  Import feature files or reports, execute tests step-by-step, 
+                  attach screenshots, and export full test results.
+                </p>
+                
+                <p className="text-muted mb-3 fs-5"><strong>Ready to get started?</strong></p>
                 <div className="d-grid gap-3">
                   <Button variant="danger" onClick={loginWithGoogle}>
                     <FaGoogle className="me-2" /> Login with Google
