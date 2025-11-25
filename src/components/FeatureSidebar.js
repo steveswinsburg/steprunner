@@ -36,15 +36,15 @@ function FeatureSidebar({ features, selectedId, onSelect }) {
       
       <div className="overflow-auto mb-3" style={{ maxHeight: '500px', width: '295px' }}>
         <h5 className="p-3">Activity</h5>
-        <ul className="list-unstyled small mb-0">
+        <ul className="list-unstyled small mb-0 px-3">
           {activities.map((log, idx) => (
-            <li key={idx}>
-              <div><strong>{log.user}</strong>&nbsp;<span>{log.message}</span></div>
-              <div>{log.message}</div>
-              <div className="text-muted" style={{ fontSize: '0.7rem' }}>
-                {new Date(log.timestamp).toLocaleTimeString()}
+            <li key={idx} className="mb-2">
+              <div>
+                <strong>{log.user}</strong> {log.message}{' '}
+                <span className="text-muted" style={{ fontSize: '0.65rem' }}>
+                  {new Date(log.timestamp).toLocaleTimeString()}
+                </span>
               </div>
-              <hr className="my-2" />
             </li>
           ))}
         </ul>
