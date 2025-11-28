@@ -48,8 +48,6 @@ We welcome feature suggestions! Please:
 
 ## 🎯 Areas We Need Help With
 
-- **Accessibility**: Making the app more accessible
-- **Performance**: Optimizing for large feature files
 - **Mobile UX**: Improving mobile experience
 - **Documentation**: Adding examples and tutorials
 - **Testing**: Adding automated tests
