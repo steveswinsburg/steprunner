@@ -1,12 +1,12 @@
 # 🏃‍♂️ StepRunner
 
-[![Node.js CI](https://github.com/steveswinsburg/steprunner/actions/workflows/node.js.yml/badge.svg)](https://github.com/steveswinsburg/steprunner/actions/workflows/node.js.yml)
-[![Deploy to Firebase Hosting on merge](https://github.com/steveswinsburg/steprunner/actions/workflows/firebase-hosting-merge.yml/badge.svg)](https://github.com/steveswinsburg/steprunner/actions/workflows/firebase-hosting-merge.yml)
+[![Build](https://github.com/steveswinsburg/steprunner/actions/workflows/node.js.yml/badge.svg)](https://github.com/steveswinsburg/steprunner/actions/workflows/node.js.yml)
+[![Deploy](https://github.com/steveswinsburg/steprunner/actions/workflows/firebase-hosting-merge.yml/badge.svg)](https://github.com/steveswinsburg/steprunner/actions/workflows/firebase-hosting-merge.yml)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-🌐 **Live Demo:** https://steprunner-abc1f.web.app/
+**StepRunner bridges the gap between automated and manual testing by seamlessly blending both approaches.** 
 
-**StepRunner bridges the gap between automated and manual testing by seamlessly blending both approaches.** Perfect for QA engineers, testers, and developers who need to execute BDD scenarios step-by-step, import existing Cucumber automation results, attach visual evidence, and generate unified reports that combine automated test outcomes with manual verification.
+Perfect for QA engineers, testers, and developers who need to execute BDD scenarios step-by-step, import existing Cucumber automation results, attach visual evidence, and generate unified reports that combine automated test outcomes with manual verification.
 
 ## ✨ Key Features
 
@@ -25,6 +25,9 @@
 <img src="screenshot.png" width="600px" alt="StepRunner interface showing Cucumber feature file execution" />
 
 *StepRunner interface showing step-by-step execution of a Cucumber feature file with visual feedback*
+
+🌐 **Live Demo:** https://steprunner-abc1f.web.app/
+
 
 ## 🧠 How It Works
 
