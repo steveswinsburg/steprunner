@@ -1,6 +1,42 @@
 {
   "name": "steprunner",
   "version": "0.1.0",
+  "description": "A powerful React web application for viewing, running, and managing Cucumber/Gherkin feature files manually. Perfect for BDD testing, exploratory testing, and manual test execution with visual evidence and comprehensive reporting.",
+  "keywords": [
+    "cucumber",
+    "gherkin",
+    "bdd",
+    "behavior-driven-development",
+    "manual-testing",
+    "test-runner",
+    "test-automation",
+    "qa",
+    "quality-assurance",
+    "testing-tools",
+    "feature-files",
+    "test-execution",
+    "react",
+    "javascript",
+    "web-app",
+    "test-management",
+    "exploratory-testing",
+    "acceptance-testing",
+    "test-documentation",
+    "step-by-step-testing"
+  ],
+  "homepage": "https://steprunner-abc1f.web.app/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/steveswinsburg/steprunner.git"
+  },
+  "bugs": {
+    "url": "https://github.com/steveswinsburg/steprunner/issues"
+  },
+  "author": {
+    "name": "Steve Swinsburg",
+    "url": "https://github.com/steveswinsburg"
+  },
+  "license": "MIT",
   "private": true,
   "dependencies": {
     "bootstrap": "^5.3.5",
