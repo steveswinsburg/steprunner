@@ -24,9 +24,9 @@ Feature: Activity logging
     When the user uploads a new feature file
     Then the activity log should record the upload
 
-  Scenario: Log records session exports
-    When the user exports the session
-    Then the activity log should record "Exported session as Cucumber report"
+  Scenario: Log records report exports
+    When the user exports the report
+    Then the activity log should record "Exported report as Cucumber"
 
   Scenario: Activity log is compact and readable
     Given multiple actions have been logged

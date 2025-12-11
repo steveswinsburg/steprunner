@@ -216,13 +216,13 @@ function SessionViewer() {
     navigate('/');
   };
 
-  const handleExportSession = async () => {
+  const handleExportReport = async () => {
     try {
       await downloadCucumberReport(Number(sessionId));
-      await logActivity('Exported session as Cucumber report');
+      await logActivity('Exported report as Cucumber');
     } catch (error) {
       console.error('Export failed:', error);
-      alert('Failed to export session. See console for details.');
+      alert('Failed to export report. See console for details.');
     }
   };
 
@@ -397,8 +397,8 @@ function SessionViewer() {
         <div className="d-flex justify-content-between align-items-center">
           <h2>Session #{sessionId}</h2>
           <div className="d-flex gap-2">
-            <Button variant="primary" size="sm" onClick={handleExportSession}>
-              Export Session
+            <Button variant="primary" size="sm" onClick={handleExportReport}>
+              Export Report
             </Button>
             <Button variant="outline-danger" size="sm" onClick={handleDeleteSession}>
               Delete Session
