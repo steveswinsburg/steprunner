@@ -3,7 +3,7 @@ import { downloadCucumberHtmlReport } from './exportCucumberHtml';
 
 
 /**
- * Export a session as a Cucumber JSON report
+ * Export a report as a Cucumber JSON report
  * @param {number} sessionId - The ID of the session to export
  * @returns {Object} Cucumber-compliant JSON report
  */

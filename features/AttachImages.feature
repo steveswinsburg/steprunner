@@ -39,7 +39,7 @@ Feature: Attaching images to test steps
 
   Scenario: Images are included in exports
     Given multiple steps have images attached
-    When the user exports the session
+    When the user exports the report
     Then images should be embedded as base64 in the JSON
     And images should be visible in the HTML report
 
