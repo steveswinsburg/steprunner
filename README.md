@@ -2,7 +2,7 @@
 
 [![Build](https://github.com/steveswinsburg/steprunner/actions/workflows/node.js.yml/badge.svg)](https://github.com/steveswinsburg/steprunner/actions/workflows/node.js.yml)
 [![Deploy](https://github.com/steveswinsburg/steprunner/actions/workflows/firebase-hosting-merge.yml/badge.svg)](https://github.com/steveswinsburg/steprunner/actions/workflows/firebase-hosting-merge.yml)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-BUSL--1.1-orange.svg)](LICENSE)
 
 **StepRunner bridges the gap between automated and manual testing by seamlessly blending both approaches.** 
 
@@ -66,6 +66,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Business Source License 1.1 (BUSL-1.1). Production use requires a commercial license from the Licensor. See [LICENSE](LICENSE) for details.
+
+For commercial licensing, please contact: steve.swinsburg@gmail.com
 
 **Made with ❤️ for the testing community**

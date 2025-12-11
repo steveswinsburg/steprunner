@@ -36,7 +36,7 @@
     "name": "Steve Swinsburg",
     "url": "https://github.com/steveswinsburg"
   },
-  "license": "MIT",
+  "license": "BUSL-1.1",
   "private": true,
   "dependencies": {
     "bootstrap": "^5.3.5",
