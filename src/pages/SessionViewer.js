@@ -219,7 +219,7 @@ function SessionViewer() {
   const handleExportReport = async () => {
     try {
       await downloadCucumberReport(Number(sessionId));
-      await logActivity('Exported report as Cucumber');
+      await logActivity('Exported report as Cucumber report');
     } catch (error) {
       console.error('Export failed:', error);
       alert('Failed to export report. See console for details.');
