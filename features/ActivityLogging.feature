@@ -26,7 +26,7 @@ Feature: Activity logging
 
   Scenario: Log records report exports
     When the user exports the report
-    Then the activity log should record "Exported report as Cucumber"
+    Then the activity log should record "Exported report as Cucumber report"
 
   Scenario: Activity log is compact and readable
     Given multiple actions have been logged

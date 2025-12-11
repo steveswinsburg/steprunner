@@ -4,7 +4,7 @@ import { downloadCucumberHtmlReport } from './exportCucumberHtml';
 
 /**
  * Export a report as a Cucumber JSON report
- * @param {number} sessionId - The ID of the session to export
+ * @param {number} sessionId - The ID of the session containing the data to export as a report
  * @returns {Object} Cucumber-compliant JSON report
  */
 export async function exportCucumberReport(sessionId) {
