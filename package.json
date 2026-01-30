@@ -43,6 +43,7 @@
     "dexie": "^4.0.11",
     "dexie-react-hooks": "^1.1.7",
     "firebase": "^11.6.1",
+    "jszip": "^3.10.1",
     "react": "^19.1.0",
     "react-bootstrap": "^2.10.9",
     "react-dom": "^19.1.0",
