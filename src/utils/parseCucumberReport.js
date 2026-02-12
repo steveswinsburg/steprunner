@@ -78,7 +78,7 @@ function parseScenario(scenarioData) {
       }
       
       // Build step text (e.g., "Given I navigate to...")
-      const stepText = `${step.keyword}${step.name}`;
+      const stepText = `${step.keyword} ${step.name}`;
       steps.push(stepText);
       
       // Extract metadata
