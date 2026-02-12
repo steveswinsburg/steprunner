@@ -78,9 +78,7 @@ function parseScenario(scenarioData) {
       }
       
       // Build step text (e.g., "Given I navigate to...")
-      // Handle both cases: keyword with or without trailing space
-      const keyword = step.keyword.endsWith(' ') ? step.keyword : `${step.keyword} `;
-      const stepText = `${keyword}${step.name}`;
+      const stepText = `${step.keyword}${step.name}`;
       steps.push(stepText);
       
       // Extract metadata
