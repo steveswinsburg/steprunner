@@ -420,7 +420,20 @@ function SessionViewer() {
 
         {parsed && (
           <div className="mt-4">
-            <h4>Feature: {parsed.title}</h4>
+            <div className="mb-2">
+              <h4 className="mb-0 d-inline" style={{ lineHeight: 1.2 }}>
+                Feature: {parsed.title}
+                {parsed.tags && parsed.tags.length > 0 && (
+                  <span className="ms-2">
+                    {parsed.tags.map((tag, i) => (
+                      <Badge key={i} bg="secondary" className="ms-1" style={{ fontSize: '0.5em', fontWeight: 500}}>
+                        {typeof tag === 'string' ? tag : tag?.name || JSON.stringify(tag)}
+                      </Badge>
+                    ))}
+                  </span>
+                )}
+              </h4>
+            </div>
             
             {/* Feature description */}
             {parsed.description && (
@@ -462,7 +475,20 @@ function SessionViewer() {
             {parsed.scenarios.map((sc, sIdx) => (
               <div key={sIdx} className="mb-4">
                 <div className="d-flex justify-content-between align-items-center mb-3">
-                  <h5>Scenario: {sc.title}</h5>
+                  <div>
+                    <h5 className="mb-0 d-inline" style={{ lineHeight: 1.2 }}>
+                      Scenario: {sc.title}
+                      {sc.tags && sc.tags.length > 0 && (
+                        <span className="ms-2" style={{ verticalAlign: 'middle' }}>
+                          {sc.tags.map((tag, i) => (
+                            <Badge key={i} bg="secondary" className="ms-1" style={{ fontSize: '0.6em', fontWeight: 500 }}>
+                              {typeof tag === 'string' ? tag : tag?.name || JSON.stringify(tag)}
+                            </Badge>
+                          ))}
+                        </span>
+                      )}
+                    </h5>
+                  </div>
                   <ButtonGroup>
                     <Button 
                       size="sm" 
