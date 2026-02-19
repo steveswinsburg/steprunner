@@ -4,8 +4,6 @@ export default function parseFeature(text) {
   let featureTags = [];
   let description = '';
   let descriptionLines = [];
-  let foundFeature = false;
-  let descriptionEnded = false;
   let lastTags = [];
 
   // Collect feature-level tags (before Feature:)
@@ -13,7 +11,6 @@ export default function parseFeature(text) {
     const trimmedLine = lines[i].trim();
     if (trimmedLine.startsWith('Feature:')) {
       title = trimmedLine.replace('Feature:', '').trim();
-      foundFeature = true;
       break;
     }
     if (trimmedLine.startsWith('@')) {
