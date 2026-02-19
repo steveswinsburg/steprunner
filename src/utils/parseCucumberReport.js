@@ -37,11 +37,17 @@ function parseFeature(featureData) {
     });
   }
   
+  // Convert feature-level tags (array of {name, line}) to array of strings
+  let featureTags = [];
+  if (Array.isArray(featureData.tags)) {
+    featureTags = featureData.tags.map(t => typeof t === 'string' ? t : t.name || '');
+  }
   return {
     title,
     scenarios,
     uri: featureData.uri, // Preserve original feature file path
-    description: featureData.description || ''
+    description: featureData.description || '',
+    tags: featureTags
   };
 }
 
@@ -105,12 +111,17 @@ function parseScenario(scenarioData) {
     });
   }
   
+  // Convert scenario-level tags (array of {name, line}) to array of strings
+  let scenarioTags = [];
+  if (Array.isArray(scenarioData.tags)) {
+    scenarioTags = scenarioData.tags.map(t => typeof t === 'string' ? t : t.name || '');
+  }
   return {
     title,
     steps,
     stepMetadata,
     images,
-    tags: scenarioData.tags || []
+    tags: scenarioTags
   };
 }
 
