@@ -1,151 +1,161 @@
 export default function parseFeature(text) {
-    const lines = text.split('\n');
-    const title = lines.find(l => l.startsWith('Feature:'))?.replace('Feature:', '').trim() || 'Untitled Feature';
-  
-    // Extract feature description (lines between Feature: and first Background/Scenario)
-    let description = '';
-    let descriptionLines = [];
-    let foundFeature = false;
-    let descriptionEnded = false;
-    
-    for (let line of lines) {
-      const trimmedLine = line.trim();
-      
-      if (trimmedLine.startsWith('Feature:')) {
-        foundFeature = true;
-        continue;
-      }
-      
-      if (foundFeature && !descriptionEnded) {
-        if (trimmedLine.startsWith('Background:') || trimmedLine.startsWith('Scenario:')) {
-          descriptionEnded = true;
-        } else if (trimmedLine.length > 0) {
-          descriptionLines.push(trimmedLine);
-        }
-      }
+  const lines = text.split('\n');
+  let title = 'Untitled Feature';
+  let featureTags = [];
+  let description = '';
+  let descriptionLines = [];
+  let lastTags = [];
+
+  // Collect feature-level tags (before Feature:)
+  for (let i = 0; i < lines.length; i++) {
+    const trimmedLine = lines[i].trim();
+    if (trimmedLine.startsWith('Feature:')) {
+      title = trimmedLine.replace('Feature:', '').trim();
+      break;
     }
-    
-    description = descriptionLines.join('\n');
-    
-    // Extract Background steps
-    let background = null;
-    let inBackground = false;
-    
-    const scenarios = [];
-    let currentScenario = null;
-  
+    if (trimmedLine.startsWith('@')) {
+      featureTags = trimmedLine.split(/\s+/).filter(t => t.startsWith('@'));
+    }
+  }
 
-    let inScenarioOutline = false;
-    let scenarioOutline = null;
-    let examplesHeader = null;
-    let examplesRows = [];
-    let collectingExamples = false;
-
-    for (let i = 0; i < lines.length; i++) {
-      let line = lines[i].trim();
-
-      if (line.startsWith('Background:')) {
-        inBackground = true;
-        background = {
-          title: 'Background',
-          steps: []
-        };
-        continue;
+  // Extract feature description (lines between Feature: and first Background/Scenario), only non-comment, non-blank lines
+  let afterFeature = false;
+  for (let i = 0; i < lines.length; i++) {
+    const trimmedLine = lines[i].trim();
+    if (!afterFeature) {
+      if (trimmedLine.startsWith('Feature:')) {
+        afterFeature = true;
       }
+      continue;
+    }
+    if (
+      trimmedLine.startsWith('Background:') ||
+      trimmedLine.startsWith('Scenario:') ||
+      trimmedLine.startsWith('Scenario Outline:') ||
+      trimmedLine.startsWith('@')
+    ) {
+      break;
+    }
+    if (trimmedLine.length > 0 && !trimmedLine.startsWith('#')) {
+      descriptionLines.push(trimmedLine);
+    }
+  }
+  description = descriptionLines.join('\n');
 
-      if (line.startsWith('Scenario Outline:')) {
-        inBackground = false;
-        if (currentScenario) {
-          scenarios.push(currentScenario);
+  // Extract Background steps
+  let background = null;
+  let inBackground = false;
+  const scenarios = [];
+  let currentScenario = null;
+  let inScenarioOutline = false;
+  let scenarioOutline = null;
+  let examplesHeader = null;
+  let examplesRows = [];
+  let collectingExamples = false;
+  lastTags = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i].trim();
+    if (line.startsWith('@')) {
+      lastTags = line.split(/\s+/).filter(t => t.startsWith('@'));
+      continue;
+    }
+    if (line.startsWith('Background:')) {
+      inBackground = true;
+      background = {
+        title: 'Background',
+        steps: []
+      };
+      continue;
+    }
+    if (line.startsWith('Scenario Outline:')) {
+      inBackground = false;
+      if (currentScenario) {
+        scenarios.push(currentScenario);
+      }
+      if (scenarioOutline) {
+        if (examplesHeader && examplesRows.length > 0) {
+          scenarios.push(...expandScenarioOutline(scenarioOutline, examplesHeader, examplesRows, lastTags));
         }
-        if (scenarioOutline) {
-          // If previous outline not processed, process it
-          if (examplesHeader && examplesRows.length > 0) {
-            scenarios.push(...expandScenarioOutline(scenarioOutline, examplesHeader, examplesRows));
-          }
+      }
+      inScenarioOutline = true;
+      scenarioOutline = {
+        title: line.replace('Scenario Outline:', '').trim(),
+        steps: [],
+        tags: lastTags
+      };
+      examplesHeader = null;
+      examplesRows = [];
+      collectingExamples = false;
+      lastTags = [];
+      continue;
+    }
+    if (line.startsWith('Scenario:')) {
+      inBackground = false;
+      if (currentScenario) {
+        scenarios.push(currentScenario);
+      }
+      if (scenarioOutline) {
+        if (examplesHeader && examplesRows.length > 0) {
+          scenarios.push(...expandScenarioOutline(scenarioOutline, examplesHeader, examplesRows, lastTags));
         }
-        inScenarioOutline = true;
-        scenarioOutline = {
-          title: line.replace('Scenario Outline:', '').trim(),
-          steps: []
-        };
+        scenarioOutline = null;
         examplesHeader = null;
         examplesRows = [];
         collectingExamples = false;
-        continue;
+        inScenarioOutline = false;
       }
-
-      if (line.startsWith('Scenario:')) {
-        inBackground = false;
-        if (currentScenario) {
-          scenarios.push(currentScenario);
-        }
-        if (scenarioOutline) {
-          // If previous outline not processed, process it
-          if (examplesHeader && examplesRows.length > 0) {
-            scenarios.push(...expandScenarioOutline(scenarioOutline, examplesHeader, examplesRows));
-          }
-          scenarioOutline = null;
-          examplesHeader = null;
-          examplesRows = [];
-          collectingExamples = false;
-          inScenarioOutline = false;
-        }
-        currentScenario = {
-          title: line.replace('Scenario:', '').trim(),
-          steps: []
-        };
-        continue;
-      }
-
-      if (inScenarioOutline) {
-        if (/^(Given|When|Then|And|But)/.test(line)) {
-          scenarioOutline.steps.push(line);
-        } else if (line.startsWith('Examples:')) {
-          collectingExamples = true;
-        } else if (collectingExamples && line.startsWith('|')) {
-          const row = line.split('|').slice(1, -1).map(cell => cell.trim());
-          if (!examplesHeader) {
-            examplesHeader = row;
-          } else {
-            examplesRows.push(row);
-          }
-        } else if (collectingExamples && !line.startsWith('|') && line !== '') {
-          // End of examples table
-          collectingExamples = false;
-        }
-        continue;
-      }
-
+      currentScenario = {
+        title: line.replace('Scenario:', '').trim(),
+        steps: [],
+        tags: lastTags
+      };
+      lastTags = [];
+      continue;
+    }
+    if (inScenarioOutline) {
       if (/^(Given|When|Then|And|But)/.test(line)) {
-        if (inBackground) {
-          background?.steps.push(line);
+        scenarioOutline.steps.push(line);
+      } else if (line.startsWith('Examples:')) {
+        collectingExamples = true;
+      } else if (collectingExamples && line.startsWith('|')) {
+        const row = line.split('|').slice(1, -1).map(cell => cell.trim());
+        if (!examplesHeader) {
+          examplesHeader = row;
         } else {
-          currentScenario?.steps.push(line);
+          examplesRows.push(row);
         }
+      } else if (collectingExamples && !line.startsWith('|') && line !== '') {
+        collectingExamples = false;
+      }
+      continue;
+    }
+    if (/^(Given|When|Then|And|But)/.test(line)) {
+      if (inBackground) {
+        background?.steps.push(line);
+      } else {
+        currentScenario?.steps.push(line);
       }
     }
-
-    // Finalize any remaining scenario outline
-    if (scenarioOutline && examplesHeader && examplesRows.length > 0) {
-      scenarios.push(...expandScenarioOutline(scenarioOutline, examplesHeader, examplesRows));
-    }
-
-    if (currentScenario) {
-      scenarios.push(currentScenario);
-    }
-  
-    return {
-      title,
-      description,
-      background,
-      scenarios
-    };
+  }
+  if (scenarioOutline && examplesHeader && examplesRows.length > 0) {
+    scenarios.push(...expandScenarioOutline(scenarioOutline, examplesHeader, examplesRows, scenarioOutline.tags));
+  }
+  if (currentScenario) {
+    scenarios.push(currentScenario);
+  }
+  return {
+    title,
+    description,
+    background,
+    scenarios,
+    tags: featureTags
+  };
 }
 
 // Helper to expand scenario outlines
-function expandScenarioOutline(outline, header, rows) {
-  // outline: { title, steps }
+function expandScenarioOutline(outline, header, rows, tags) {
+  // outline: { title, steps, tags }
   // header: [var1, var2, ...]
   // rows: [[val1, val2, ...], ...]
   const scenarios = [];
@@ -158,7 +168,7 @@ function expandScenarioOutline(outline, header, rows) {
       });
       return newStep;
     });
-    scenarios.push({ title: scenarioTitle, steps });
+    scenarios.push({ title: scenarioTitle, steps, tags: tags || outline.tags || [] });
   }
   return scenarios;
 }
