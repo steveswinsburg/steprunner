@@ -21,19 +21,26 @@ export default function parseFeature(text) {
     }
   }
 
-  // Extract feature description (lines between Feature: and first Background/Scenario)
+  // Extract feature description (lines between Feature: and first Background/Scenario), only non-comment, non-blank lines
+  let afterFeature = false;
   for (let i = 0; i < lines.length; i++) {
     const trimmedLine = lines[i].trim();
-    if (trimmedLine.startsWith('Feature:')) {
-      foundFeature = true;
+    if (!afterFeature) {
+      if (trimmedLine.startsWith('Feature:')) {
+        afterFeature = true;
+      }
       continue;
     }
-    if (foundFeature && !descriptionEnded) {
-      if (trimmedLine.startsWith('Background:') || trimmedLine.startsWith('Scenario:') || trimmedLine.startsWith('Scenario Outline:') || trimmedLine.startsWith('@')) {
-        descriptionEnded = true;
-      } else if (trimmedLine.length > 0) {
-        descriptionLines.push(trimmedLine);
-      }
+    if (
+      trimmedLine.startsWith('Background:') ||
+      trimmedLine.startsWith('Scenario:') ||
+      trimmedLine.startsWith('Scenario Outline:') ||
+      trimmedLine.startsWith('@')
+    ) {
+      break;
+    }
+    if (trimmedLine.length > 0 && !trimmedLine.startsWith('#')) {
+      descriptionLines.push(trimmedLine);
     }
   }
   description = descriptionLines.join('\n');
