@@ -34,9 +34,16 @@ export default function parseFeature(text) {
     const scenarios = [];
     let currentScenario = null;
   
-    for (let line of lines) {
-      line = line.trim();
-      
+
+    let inScenarioOutline = false;
+    let scenarioOutline = null;
+    let examplesHeader = null;
+    let examplesRows = [];
+    let collectingExamples = false;
+
+    for (let i = 0; i < lines.length; i++) {
+      let line = lines[i].trim();
+
       if (line.startsWith('Background:')) {
         inBackground = true;
         background = {
@@ -45,17 +52,72 @@ export default function parseFeature(text) {
         };
         continue;
       }
-  
+
+      if (line.startsWith('Scenario Outline:')) {
+        inBackground = false;
+        if (currentScenario) {
+          scenarios.push(currentScenario);
+        }
+        if (scenarioOutline) {
+          // If previous outline not processed, process it
+          if (examplesHeader && examplesRows.length > 0) {
+            scenarios.push(...expandScenarioOutline(scenarioOutline, examplesHeader, examplesRows));
+          }
+        }
+        inScenarioOutline = true;
+        scenarioOutline = {
+          title: line.replace('Scenario Outline:', '').trim(),
+          steps: []
+        };
+        examplesHeader = null;
+        examplesRows = [];
+        collectingExamples = false;
+        continue;
+      }
+
       if (line.startsWith('Scenario:')) {
         inBackground = false;
         if (currentScenario) {
           scenarios.push(currentScenario);
         }
+        if (scenarioOutline) {
+          // If previous outline not processed, process it
+          if (examplesHeader && examplesRows.length > 0) {
+            scenarios.push(...expandScenarioOutline(scenarioOutline, examplesHeader, examplesRows));
+          }
+          scenarioOutline = null;
+          examplesHeader = null;
+          examplesRows = [];
+          collectingExamples = false;
+          inScenarioOutline = false;
+        }
         currentScenario = {
           title: line.replace('Scenario:', '').trim(),
           steps: []
         };
-      } else if (/^(Given|When|Then|And|But)/.test(line)) {
+        continue;
+      }
+
+      if (inScenarioOutline) {
+        if (/^(Given|When|Then|And|But)/.test(line)) {
+          scenarioOutline.steps.push(line);
+        } else if (line.startsWith('Examples:')) {
+          collectingExamples = true;
+        } else if (collectingExamples && line.startsWith('|')) {
+          const row = line.split('|').slice(1, -1).map(cell => cell.trim());
+          if (!examplesHeader) {
+            examplesHeader = row;
+          } else {
+            examplesRows.push(row);
+          }
+        } else if (collectingExamples && !line.startsWith('|') && line !== '') {
+          // End of examples table
+          collectingExamples = false;
+        }
+        continue;
+      }
+
+      if (/^(Given|When|Then|And|But)/.test(line)) {
         if (inBackground) {
           background?.steps.push(line);
         } else {
@@ -63,15 +125,40 @@ export default function parseFeature(text) {
         }
       }
     }
-  
+
+    // Finalize any remaining scenario outline
+    if (scenarioOutline && examplesHeader && examplesRows.length > 0) {
+      scenarios.push(...expandScenarioOutline(scenarioOutline, examplesHeader, examplesRows));
+    }
+
     if (currentScenario) {
       scenarios.push(currentScenario);
     }
   
-    return { 
-      title, 
+    return {
+      title,
       description,
       background,
-      scenarios 
+      scenarios
     };
+}
+
+// Helper to expand scenario outlines
+function expandScenarioOutline(outline, header, rows) {
+  // outline: { title, steps }
+  // header: [var1, var2, ...]
+  // rows: [[val1, val2, ...], ...]
+  const scenarios = [];
+  for (const row of rows) {
+    let scenarioTitle = outline.title;
+    let steps = outline.steps.map(step => {
+      let newStep = step;
+      header.forEach((h, idx) => {
+        newStep = newStep.replaceAll(`<${h.trim()}>`, row[idx]);
+      });
+      return newStep;
+    });
+    scenarios.push({ title: scenarioTitle, steps });
   }
+  return scenarios;
+}
