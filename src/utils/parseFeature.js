@@ -154,8 +154,7 @@ function expandScenarioOutline(outline, header, rows) {
     let steps = outline.steps.map(step => {
       let newStep = step;
       header.forEach((h, idx) => {
-        const re = new RegExp(`<\\s*${h}\\s*>`, 'g');
-        newStep = newStep.replace(re, row[idx]);
+        newStep = newStep.replaceAll(`<${h.trim()}>`, row[idx]);
       });
       return newStep;
     });
