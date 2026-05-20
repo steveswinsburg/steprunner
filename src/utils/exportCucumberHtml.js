@@ -266,9 +266,9 @@ export async function generateCucumberHtml(cucumberJson) {
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      width: 200px;
-      height: 200px;
-      padding: 12px;
+      width: 120px;
+      height: 120px;
+      padding: 8px;
       background: #f8f9fa;
       border: 1px solid #dee2e6;
       border-radius: 0.25rem;
@@ -295,17 +295,17 @@ export async function generateCucumberHtml(cucumberJson) {
     }
     
     .attachment-icon {
-      font-size: 48px;
-      margin-bottom: 12px;
+      font-size: 32px;
+      margin-bottom: 8px;
       color: #6c757d;
     }
     
     .attachment-name {
-      font-size: 0.875rem;
+      font-size: 0.75rem;
       color: #6c757d;
       text-align: center;
       word-break: break-word;
-      padding: 0 8px;
+      padding: 0 4px;
     }
     
     .timestamp {
