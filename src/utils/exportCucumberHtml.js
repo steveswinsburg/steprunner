@@ -439,6 +439,17 @@ export async function generateCucumberHtml(cucumberJson) {
       return 'bi-file-earmark';
     }
     
+    function truncateFileName(fileName, maxLength = 20) {
+      if (!fileName || fileName.length <= maxLength) return fileName;
+      const extension = fileName.substring(fileName.lastIndexOf('.'));
+      const nameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
+      if (nameWithoutExt.length + extension.length <= maxLength) return fileName;
+      const charsToShow = maxLength - extension.length - 3; // 3 for '...'
+      const frontChars = Math.ceil(charsToShow / 2);
+      const backChars = Math.floor(charsToShow / 2);
+      return nameWithoutExt.substring(0, frontChars) + '...' + nameWithoutExt.substring(nameWithoutExt.length - backChars) + extension;
+    }
+    
     function renderReport() {
       // Render stats
       const stats = calculateStats(CUCUMBER_DATA);
@@ -509,9 +520,9 @@ export async function generateCucumberHtml(cucumberJson) {
                 const fileName = emb.name || \`attachment_\${idx + 1}\`;
                 const iconClass = getFileIcon(emb.mime_type);
                 const dataUrl = \`data:\${emb.mime_type};base64,\${emb.data}\`;
-                allAttachments.push(\`<a href="\${dataUrl}" download="\${fileName}" class="attachment" title="Click to download">
+                allAttachments.push(\`<a href="\${dataUrl}" download="\${fileName}" class="attachment" title="\${fileName}">
                   <i class="bi \${iconClass} attachment-icon"></i>
-                  <div class="attachment-name">\${fileName}</div>
+                  <div class="attachment-name">\${truncateFileName(fileName)}</div>
                 </a>\`);
               });
               
