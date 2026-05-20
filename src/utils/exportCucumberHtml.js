@@ -255,9 +255,15 @@ export async function generateCucumberHtml(cucumberJson) {
     
     .step-image {
       margin-top: 10px;
-      max-width: 100%;
+      max-width: 200px;
       border: 1px solid #dee2e6;
-      border-radius: 4px;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    
+    .step-image:hover {
+      opacity: 0.8;
     }
     
     .step-attachments {
@@ -268,17 +274,18 @@ export async function generateCucumberHtml(cucumberJson) {
     }
     
     .attachment {
-      display: inline-flex;
+      display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 6px;
-      padding: 6px 12px;
+      min-width: 150px;
+      padding: 12px;
       background: #f8f9fa;
       border: 1px solid #dee2e6;
-      border-radius: 4px;
-      font-size: 0.85em;
+      border-radius: 0.25rem;
       color: #495057;
       text-decoration: none;
       transition: all 0.2s;
+      cursor: pointer;
     }
     
     .attachment:hover {
@@ -287,7 +294,30 @@ export async function generateCucumberHtml(cucumberJson) {
     }
     
     .attachment-icon {
-      font-size: 1.2em;
+      font-size: 30px;
+      margin-bottom: 8px;
+      color: #6c757d;
+    }
+    
+    .attachment-name {
+      font-size: 0.875rem;
+      color: #6c757d;
+      text-align: center;
+      word-break: break-word;
+      max-width: 150px;
+      margin-bottom: 4px;
+    }
+    
+    .attachment-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      background: #6c757d;
+      color: white;
+      border-radius: 0.25rem;
+      font-size: 0.75rem;
+      margin-top: 4px;
     }
     
     .timestamp {
@@ -477,20 +507,24 @@ export async function generateCucumberHtml(cucumberJson) {
                 }
               });
               
-              // Render images
+              // Render images as thumbnails (clickable to open full size)
               imagesHtml = images.map(emb => 
-                \`<img class="step-image" src="data:\${emb.mime_type};base64,\${emb.data}" alt="Step screenshot" />\`
+                \`<img class="step-image" src="data:\${emb.mime_type};base64,\${emb.data}" alt="Step screenshot" onclick="window.open(this.src, '_blank')" title="Click to view full size" />\`
               ).join('');
               
-              // Render document attachments
+              // Render document attachments (matching SessionViewer style)
               if (documents.length > 0) {
                 const attachmentLinks = documents.map((emb, idx) => {
                   const fileName = emb.name || \`attachment_\${idx + 1}\`;
                   const icon = getFileIcon(emb.mime_type);
                   const dataUrl = \`data:\${emb.mime_type};base64,\${emb.data}\`;
                   return \`<a href="\${dataUrl}" download="\${fileName}" class="attachment" title="\${emb.mime_type}">
-                    <span class="attachment-icon">\${icon}</span>
-                    <span>\${fileName}</span>
+                    <div class="attachment-icon">\${icon}</div>
+                    <div class="attachment-name">\${fileName}</div>
+                    <div class="attachment-badge">
+                      <span>⬇</span>
+                      <span>Download</span>
+                    </div>
                   </a>\`;
                 }).join('');
                 attachmentsHtml = \`<div class="step-attachments">\${attachmentLinks}</div>\`;
