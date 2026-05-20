@@ -155,17 +155,27 @@ function SessionViewer() {
   };
 
   const handleMarkStep = async (scenarioIndex, stepIndex, status) => {
+    console.log('handleMarkStep called:', { scenarioIndex, stepIndex, status });
     const key = `${scenarioIndex}-${stepIndex}`;
     const currentUser = auth.currentUser;
 
-    await db.steps.put({
+    const stepData = {
       sessionId: Number(sessionId),
       featureId: selectedFeature.id,
       scenarioIndex,
       stepIndex,
       status,
       modifiedBy: currentUser?.displayName || currentUser?.email || 'Unknown'
-    });
+    };
+    
+    console.log('Saving step to DB:', stepData);
+
+    try {
+      await db.steps.put(stepData);
+      console.log('Step saved successfully');
+    } catch (error) {
+      console.error('Error saving step:', error);
+    }
 
     await logActivity(`Marked step ${scenarioIndex + 1}.${stepIndex + 1} as "${status}"`);
 

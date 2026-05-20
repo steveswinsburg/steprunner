@@ -261,7 +261,6 @@ export async function generateCucumberHtml(cucumberJson) {
     }
     
     .timestamp {
-      color: #6c757d;
       font-size: 0.9em;
     }
     
