@@ -21,6 +21,30 @@ function SessionViewer() {
   const [scenarioImages, setScenarioImages] = useState({});
   const [dragOverStep, setDragOverStep] = useState(null);
 
+  // Helper function to get Bootstrap icon class for file types
+  const getFileIcon = (mimeType) => {
+    if (!mimeType) return 'bi-file-earmark';
+    if (mimeType.includes('json')) return 'bi-filetype-json';
+    if (mimeType.includes('xml')) return 'bi-filetype-xml';
+    if (mimeType.includes('csv')) return 'bi-filetype-csv';
+    if (mimeType.includes('yaml')) return 'bi-filetype-yml';
+    if (mimeType.includes('pdf')) return 'bi-filetype-pdf';
+    if (mimeType.includes('text')) return 'bi-file-earmark-text';
+    return 'bi-file-earmark';
+  };
+
+  // Helper function to truncate long filenames
+  const truncateFileName = (fileName, maxLength = 20) => {
+    if (!fileName || fileName.length <= maxLength) return fileName;
+    const extension = fileName.substring(fileName.lastIndexOf('.'));
+    const nameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
+    if (nameWithoutExt.length + extension.length <= maxLength) return fileName;
+    const charsToShow = maxLength - extension.length - 3; // 3 for '...'
+    const frontChars = Math.ceil(charsToShow / 2);
+    const backChars = Math.floor(charsToShow / 2);
+    return nameWithoutExt.substring(0, frontChars) + '...' + nameWithoutExt.substring(nameWithoutExt.length - backChars) + extension;
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       const loaded = await db.features
@@ -68,10 +92,10 @@ function SessionViewer() {
               });
             }
 
-            // Store images from the report
+            // Store attachments from the report
             if (scenario.images && scenario.images.length > 0) {
               for (const image of scenario.images) {
-                await db.images.add({
+                await db.attachments.add({
                   sessionId: Number(sessionId),
                   featureId,
                   scenarioIndex: sIdx,
@@ -137,8 +161,8 @@ function SessionViewer() {
     setStepResults(mapped);
     setStepMetadata(metadata);
 
-    // Load images for this feature
-    const images = await db.images
+    // Load attachments for this feature
+    const images = await db.attachments
       .where({ sessionId: Number(sessionId), featureId: feature.id })
       .toArray();
 
@@ -278,10 +302,10 @@ function SessionViewer() {
   };
 
   const handleDeleteImage = async (imageId, scenarioIndex, stepIndex) => {
-    await db.images.delete(imageId);
+    await db.attachments.delete(imageId);
     
-    // Reload images
-    const images = await db.images
+    // Reload attachments
+    const images = await db.attachments
       .where({ sessionId: Number(sessionId), featureId: selectedFeature.id })
       .toArray();
 
@@ -317,47 +341,73 @@ function SessionViewer() {
     setDragOverStep(null);
 
     const files = Array.from(e.dataTransfer.files);
-    const imageFile = files.find(file => file.type.startsWith('image/'));
+    // Support images and various document types
+    const validFiles = files.filter(file => {
+      return file.type.startsWith('image/') || 
+             file.type === 'text/plain' ||
+             file.type === 'application/json' ||
+             file.type === 'application/xml' ||
+             file.type === 'text/xml' ||
+             file.type === 'text/csv' ||
+             file.type === 'application/yaml' ||
+             file.type === 'text/yaml' ||
+             file.type === 'application/pdf' ||
+             file.name.match(/\.(txt|log|json|xml|csv|ya?ml|pdf)$/i);
+    });
     
-    if (!imageFile) {
+    if (validFiles.length === 0) {
       return;
     }
 
-    // Read image as base64
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const base64Data = e.target.result.split(',')[1];
-      
-      await db.images.add({
-        sessionId: Number(sessionId),
-        featureId: selectedFeature.id,
-        scenarioIndex,
-        stepIndex,
-        imageData: base64Data,
-        mimeType: imageFile.type,
-        uploadedAt: new Date().toISOString()
-      });
+    // Read all files as base64
+    const fileReads = validFiles.map(file => 
+      new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const base64Data = e.target.result.split(',')[1];
+          const fileType = file.type.startsWith('image/') ? 'image' : 'document';
+          
+          resolve({
+            sessionId: Number(sessionId),
+            featureId: selectedFeature.id,
+            scenarioIndex,
+            stepIndex,
+            fileName: file.name,
+            fileType: fileType,
+            imageData: base64Data,
+            mimeType: file.type,
+            uploadedAt: new Date().toISOString()
+          });
+        };
+        reader.readAsDataURL(file);
+      })
+    );
 
-      // Reload images
-      const images = await db.images
-        .where({ sessionId: Number(sessionId), featureId: selectedFeature.id })
-        .toArray();
-
-      const imagesByScenario = {};
-      images.forEach(img => {
-        const key = `${img.scenarioIndex}-${img.stepIndex}`;
-        if (!imagesByScenario[key]) {
-          imagesByScenario[key] = [];
-        }
-        imagesByScenario[key].push(img);
-      });
-
-      setScenarioImages(imagesByScenario);
-      
-      await logActivity(`Added image to step ${scenarioIndex + 1}.${stepIndex + 1}`);
-    };
+    const fileData = await Promise.all(fileReads);
     
-    reader.readAsDataURL(imageFile);
+    // Add all files to database
+    await db.attachments.bulkAdd(fileData);
+
+    // Reload attachments
+    const images = await db.attachments
+      .where({ sessionId: Number(sessionId), featureId: selectedFeature.id })
+      .toArray();
+
+    const imagesByScenario = {};
+    images.forEach(img => {
+      const key = `${img.scenarioIndex}-${img.stepIndex}`;
+      if (!imagesByScenario[key]) {
+        imagesByScenario[key] = [];
+      }
+      imagesByScenario[key].push(img);
+    });
+
+    setScenarioImages(imagesByScenario);
+    
+    const fileTypeText = validFiles.length === 1 
+      ? (validFiles[0].type.startsWith('image/') ? 'image' : 'text file')
+      : `${validFiles.length} files`;
+    await logActivity(`Added ${fileTypeText} to step ${scenarioIndex + 1}.${stepIndex + 1}`);
   };
 
   return (
@@ -630,7 +680,7 @@ function SessionViewer() {
                           </div>
                         )}
                         
-                        {/* Display images */}
+                        {/* Display images and files */}
                         {images.length > 0 && (
                           <div className="mt-2 d-flex gap-2 flex-wrap">
                             {images.map((img, imgIdx) => (
@@ -639,12 +689,40 @@ function SessionViewer() {
                                 style={{ position: 'relative' }}
                                 className="image-container"
                               >
-                                <Image
-                                  src={`data:${img.mimeType};base64,${img.imageData}`}
-                                  thumbnail
-                                  style={{ maxWidth: '200px', cursor: 'pointer' }}
-                                  onClick={() => window.open(`data:${img.mimeType};base64,${img.imageData}`, '_blank')}
-                                />
+                                {(!img.fileType || img.fileType === 'image') ? (
+                                  <Image
+                                    src={`data:${img.mimeType};base64,${img.imageData}`}
+                                    thumbnail
+                                    style={{ maxHeight: '120px', cursor: 'pointer' }}
+                                    onClick={() => window.open(`data:${img.mimeType};base64,${img.imageData}`, '_blank')}
+                                  />
+                                ) : (
+                                  <div
+                                    className="border rounded p-3 d-flex flex-column align-items-center justify-content-center"
+                                    style={{ 
+                                      width: '120px',
+                                      height: '120px',
+                                      backgroundColor: '#f8f9fa',
+                                      cursor: 'pointer'
+                                    }}
+                                    onClick={() => {
+                                      const blob = new Blob([atob(img.imageData)], { type: img.mimeType });
+                                      const url = URL.createObjectURL(blob);
+                                      const a = document.createElement('a');
+                                      a.href = url;
+                                      a.download = img.fileName;
+                                      document.body.appendChild(a);
+                                      a.click();
+                                      document.body.removeChild(a);
+                                      URL.revokeObjectURL(url);
+                                    }}
+                                  >
+                                    <i className={`bi ${getFileIcon(img.mimeType)}`} style={{ fontSize: '32px', color: '#6c757d', marginBottom: '8px' }}></i>
+                                    <small className="text-muted text-center" style={{ wordBreak: 'break-word', maxWidth: '100px', fontSize: '0.75rem' }} title={img.fileName}>
+                                      {truncateFileName(img.fileName)}
+                                    </small>
+                                  </div>
+                                )}
                                 <Button
                                   variant="danger"
                                   size="sm"
@@ -656,7 +734,8 @@ function SessionViewer() {
                                   }}
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    if (window.confirm('Are you sure you want to delete this image?')) {
+                                    const fileTypeLabel = (!img.fileType || img.fileType === 'image') ? 'image' : 'file';
+                                    if (window.confirm(`Are you sure you want to delete this ${fileTypeLabel}?`)) {
                                       handleDeleteImage(img.id, sIdx, stepIdx);
                                     }
                                   }}
