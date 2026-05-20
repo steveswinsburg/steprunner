@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button, ButtonGroup, Image, Badge } from 'react-bootstrap';
-import { FaCheckCircle, FaTimesCircle, FaForward, FaQuestionCircle } from 'react-icons/fa';
+import { FaCheckCircle, FaTimesCircle, FaForward, FaQuestionCircle, FaFileAlt, FaDownload } from 'react-icons/fa';
 import DragDropZone from '../components/DragDropZone';
 import FeatureSidebar from '../components/FeatureSidebar';
 import db from '../db/indexedDb';
@@ -317,47 +317,63 @@ function SessionViewer() {
     setDragOverStep(null);
 
     const files = Array.from(e.dataTransfer.files);
-    const imageFile = files.find(file => file.type.startsWith('image/'));
+    const validFiles = files.filter(file => 
+      file.type.startsWith('image/') || file.type === 'text/plain'
+    );
     
-    if (!imageFile) {
+    if (validFiles.length === 0) {
       return;
     }
 
-    // Read image as base64
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const base64Data = e.target.result.split(',')[1];
-      
-      await db.images.add({
-        sessionId: Number(sessionId),
-        featureId: selectedFeature.id,
-        scenarioIndex,
-        stepIndex,
-        imageData: base64Data,
-        mimeType: imageFile.type,
-        uploadedAt: new Date().toISOString()
-      });
+    // Read all files as base64
+    const fileReads = validFiles.map(file => 
+      new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const base64Data = e.target.result.split(',')[1];
+          const fileType = file.type.startsWith('image/') ? 'image' : 'text';
+          
+          resolve({
+            sessionId: Number(sessionId),
+            featureId: selectedFeature.id,
+            scenarioIndex,
+            stepIndex,
+            fileName: file.name,
+            fileType: fileType,
+            imageData: base64Data,
+            mimeType: file.type,
+            uploadedAt: new Date().toISOString()
+          });
+        };
+        reader.readAsDataURL(file);
+      })
+    );
 
-      // Reload images
-      const images = await db.images
-        .where({ sessionId: Number(sessionId), featureId: selectedFeature.id })
-        .toArray();
-
-      const imagesByScenario = {};
-      images.forEach(img => {
-        const key = `${img.scenarioIndex}-${img.stepIndex}`;
-        if (!imagesByScenario[key]) {
-          imagesByScenario[key] = [];
-        }
-        imagesByScenario[key].push(img);
-      });
-
-      setScenarioImages(imagesByScenario);
-      
-      await logActivity(`Added image to step ${scenarioIndex + 1}.${stepIndex + 1}`);
-    };
+    const fileData = await Promise.all(fileReads);
     
-    reader.readAsDataURL(imageFile);
+    // Add all files to database
+    await db.images.bulkAdd(fileData);
+
+    // Reload images
+    const images = await db.images
+      .where({ sessionId: Number(sessionId), featureId: selectedFeature.id })
+      .toArray();
+
+    const imagesByScenario = {};
+    images.forEach(img => {
+      const key = `${img.scenarioIndex}-${img.stepIndex}`;
+      if (!imagesByScenario[key]) {
+        imagesByScenario[key] = [];
+      }
+      imagesByScenario[key].push(img);
+    });
+
+    setScenarioImages(imagesByScenario);
+    
+    const fileTypeText = validFiles.length === 1 
+      ? (validFiles[0].type.startsWith('image/') ? 'image' : 'text file')
+      : `${validFiles.length} files`;
+    await logActivity(`Added ${fileTypeText} to step ${scenarioIndex + 1}.${stepIndex + 1}`);
   };
 
   return (
@@ -630,7 +646,7 @@ function SessionViewer() {
                           </div>
                         )}
                         
-                        {/* Display images */}
+                        {/* Display images and files */}
                         {images.length > 0 && (
                           <div className="mt-2 d-flex gap-2 flex-wrap">
                             {images.map((img, imgIdx) => (
@@ -639,12 +655,43 @@ function SessionViewer() {
                                 style={{ position: 'relative' }}
                                 className="image-container"
                               >
-                                <Image
-                                  src={`data:${img.mimeType};base64,${img.imageData}`}
-                                  thumbnail
-                                  style={{ maxWidth: '200px', cursor: 'pointer' }}
-                                  onClick={() => window.open(`data:${img.mimeType};base64,${img.imageData}`, '_blank')}
-                                />
+                                {(!img.fileType || img.fileType === 'image') ? (
+                                  <Image
+                                    src={`data:${img.mimeType};base64,${img.imageData}`}
+                                    thumbnail
+                                    style={{ maxWidth: '200px', cursor: 'pointer' }}
+                                    onClick={() => window.open(`data:${img.mimeType};base64,${img.imageData}`, '_blank')}
+                                  />
+                                ) : (
+                                  <div
+                                    className="border rounded p-3 d-flex flex-column align-items-center"
+                                    style={{ 
+                                      minWidth: '150px', 
+                                      backgroundColor: '#f8f9fa',
+                                      cursor: 'pointer'
+                                    }}
+                                    onClick={() => {
+                                      const blob = new Blob([atob(img.imageData)], { type: img.mimeType });
+                                      const url = URL.createObjectURL(blob);
+                                      const a = document.createElement('a');
+                                      a.href = url;
+                                      a.download = img.fileName;
+                                      document.body.appendChild(a);
+                                      a.click();
+                                      document.body.removeChild(a);
+                                      URL.revokeObjectURL(url);
+                                    }}
+                                  >
+                                    <FaFileAlt size={30} className="mb-2 text-secondary" />
+                                    <small className="text-muted text-center" style={{ wordBreak: 'break-word', maxWidth: '150px' }}>
+                                      {img.fileName}
+                                    </small>
+                                    <Badge bg="secondary" className="mt-1">
+                                      <FaDownload className="me-1" />
+                                      Download
+                                    </Badge>
+                                  </div>
+                                )}
                                 <Button
                                   variant="danger"
                                   size="sm"
@@ -656,7 +703,8 @@ function SessionViewer() {
                                   }}
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    if (window.confirm('Are you sure you want to delete this image?')) {
+                                    const fileTypeLabel = (!img.fileType || img.fileType === 'image') ? 'image' : 'file';
+                                    if (window.confirm(`Are you sure you want to delete this ${fileTypeLabel}?`)) {
                                       handleDeleteImage(img.id, sIdx, stepIdx);
                                     }
                                   }}
