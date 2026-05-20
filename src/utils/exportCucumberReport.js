@@ -29,10 +29,19 @@ export async function exportCucumberReport(sessionId) {
       parsedFeature = parseFeature(feature.content);
     }
 
+    console.log('parseFeature function:', parseFeature);
+    console.log('parsedFeature result:', parsedFeature);
+
     // Fetch all steps for this feature
     const steps = await db.steps
       .where({ sessionId, featureId: feature.id })
       .toArray();
+    
+    console.log('Steps from DB:', steps);
+    if (steps.length > 0) {
+      console.log('First step example:', steps[0]);
+      console.log('Step keys:', steps.map(s => `scenario:${s.scenarioIndex} step:${s.stepIndex}`));
+    }
 
     // Fetch all images for this feature
     const images = await db.images
@@ -41,11 +50,18 @@ export async function exportCucumberReport(sessionId) {
 
     // Build scenarios (elements in Cucumber JSON)
     const elements = parsedFeature.scenarios.map((scenario, scenarioIndex) => {
+      console.log(`\nProcessing scenario ${scenarioIndex}:`, scenario.title);
+      console.log('Scenario steps:', scenario.steps);
+      
       // Build steps for this scenario
       const scenarioSteps = scenario.steps.map((stepText, stepIndex) => {
         const stepKey = steps.find(
           s => s.scenarioIndex === scenarioIndex && s.stepIndex === stepIndex
         );
+        
+        console.log(`  Step ${stepIndex}: "${stepText}"`);
+        console.log(`    Found stepKey:`, stepKey);
+        console.log(`    Status: ${stepKey?.status}`);
 
         // Extract keyword and name from step text
         const match = stepText.match(/^(Given|When|Then|And|But)\s+(.+)$/);
