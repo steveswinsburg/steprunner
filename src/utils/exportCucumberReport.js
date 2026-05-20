@@ -39,8 +39,8 @@ export async function exportCucumberReport(sessionId) {
     
     console.log('Steps from DB:', steps);
     if (steps.length > 0) {
-      console.log('First step example:', steps[0]);
-      console.log('Step keys:', steps.map(s => `scenario:${s.scenarioIndex} step:${s.stepIndex}`));
+      console.log('First step example (full):', JSON.stringify(steps[0], null, 2));
+      console.log('All step statuses:', steps.map((s, i) => `${i}: ${s.status}`));
     }
 
     // Fetch all images for this feature
