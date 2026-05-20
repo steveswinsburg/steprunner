@@ -38,6 +38,9 @@
   },
   "license": "BUSL-1.1",
   "private": true,
+  "engines": {
+    "node": ">=22.14.0"
+  },
   "dependencies": {
     "bootstrap": "^5.3.5",
     "dexie": "^4.0.11",
