@@ -43,8 +43,8 @@ export async function exportCucumberReport(sessionId) {
       console.log('All step statuses:', steps.map((s, i) => `${i}: ${s.status}`));
     }
 
-    // Fetch all images for this feature
-    const images = await db.images
+    // Fetch all attachments for this feature
+    const images = await db.attachments
       .where({ sessionId, featureId: feature.id })
       .toArray();
 
@@ -68,14 +68,16 @@ export async function exportCucumberReport(sessionId) {
         const keyword = match ? `${match[1]} ` : '';
         const name = match ? match[2] : stepText;
 
-        // Get embeddings (images) for this step
-        const stepImages = images.filter(
+        // Get all attachments (images and document files) for this step
+        const stepAttachments = images.filter(
           img => img.scenarioIndex === scenarioIndex && img.stepIndex === stepIndex
         );
 
-        const embeddings = stepImages.map(img => ({
-          data: img.imageData,
-          mime_type: img.mimeType
+        // All attachments go into embeddings (Cucumber supports any MIME type)
+        const embeddings = stepAttachments.map(attachment => ({
+          data: attachment.imageData,
+          mime_type: attachment.mimeType,
+          ...(attachment.fileName && { name: attachment.fileName })
         }));
 
         return {
@@ -141,10 +143,63 @@ function mapStatusToCucumber(status) {
 }
 
 /**
- * Download the Cucumber report as a ZIP file containing JSON, HTML, and audit log
+ * Get file extension from MIME type
+ */
+function getFileExtension(mimeType, fileName) {
+  if (fileName && fileName.includes('.')) {
+    return ''; // Already has extension
+  }
+  
+  const mimeToExt = {
+    'image/png': '.png',
+    'image/jpeg': '.jpg',
+    'image/jpg': '.jpg',
+    'image/gif': '.gif',
+    'image/webp': '.webp',
+    'image/svg+xml': '.svg',
+    'application/json': '.json',
+    'application/xml': '.xml',
+    'text/xml': '.xml',
+    'text/plain': '.txt',
+    'text/csv': '.csv',
+    'application/yaml': '.yaml',
+    'text/yaml': '.yaml',
+    'application/pdf': '.pdf'
+  };
+  
+  return mimeToExt[mimeType] || '.dat';
+}
+
+/**
+ * Download the Cucumber report as a ZIP file containing JSON, HTML, audit log, and attachments
  */
 export async function downloadCucumberReport(sessionId) {
   const report = await exportCucumberReport(sessionId);
+  
+  // Extract ALL attachments to separate files for convenience
+  // They're embedded in the JSON, but separate files are easier to view/share
+  const fileAttachments = [];
+  report.forEach((feature, featureIdx) => {
+    feature.elements?.forEach((element, elementIdx) => {
+      element.steps?.forEach((step, stepIdx) => {
+        if (step.embeddings && step.embeddings.length > 0) {
+          step.embeddings.forEach((embedding, embIdx) => {
+            // Extract all attachments (images and documents)
+            const fileName = embedding.name || `attachment_${embIdx + 1}`;
+            const ext = getFileExtension(embedding.mime_type, fileName);
+            const finalFileName = fileName.includes('.') ? fileName : `${fileName}${ext}`;
+            
+            fileAttachments.push({
+              path: `attachments/feature${featureIdx + 1}_scenario${elementIdx + 1}_step${stepIdx + 1}/${finalFileName}`,
+              data: embedding.data,
+              mimeType: embedding.mime_type
+            });
+          });
+        }
+      });
+    });
+  });
+  
   const json = JSON.stringify(report, null, 2);
   
   // Generate HTML report
@@ -158,6 +213,12 @@ export async function downloadCucumberReport(sessionId) {
   zip.file(`cucumber-report-${sessionId}.json`, json);
   zip.file(`cucumber-report-${sessionId}.html`, html);
   zip.file(`audit-log-${sessionId}.txt`, auditLog);
+  
+  // Add all attachments to separate folder (also embedded in JSON)
+  fileAttachments.forEach(attachment => {
+    const binaryData = atob(attachment.data);
+    zip.file(attachment.path, binaryData);
+  });
   
   // Generate ZIP blob
   const zipBlob = await zip.generateAsync({ type: 'blob' });

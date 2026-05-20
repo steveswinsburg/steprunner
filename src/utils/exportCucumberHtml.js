@@ -12,6 +12,7 @@ export async function generateCucumberHtml(cucumberJson) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cucumber Test Report</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
   <style>
     * {
       box-sizing: border-box;
@@ -253,11 +254,58 @@ export async function generateCucumberHtml(cucumberJson) {
       white-space: pre-wrap;
     }
     
-    .step-image {
+    .step-attachments {
       margin-top: 10px;
-      max-width: 100%;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    
+    .attachment {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 120px;
+      height: 120px;
+      padding: 8px;
+      background: #f8f9fa;
       border: 1px solid #dee2e6;
-      border-radius: 4px;
+      border-radius: 0.25rem;
+      color: #495057;
+      text-decoration: none;
+      transition: all 0.2s;
+      cursor: pointer;
+      overflow: hidden;
+    }
+    
+    .attachment:hover {
+      background: #e9ecef;
+      border-color: #adb5bd;
+    }
+    
+    .attachment.image-attachment {
+      padding: 0;
+    }
+    
+    .attachment-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .attachment-icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+      color: #6c757d;
+    }
+    
+    .attachment-name {
+      font-size: 0.75rem;
+      color: #6c757d;
+      text-align: center;
+      word-break: break-word;
+      padding: 0 4px;
     }
     
     .timestamp {
@@ -380,6 +428,28 @@ export async function generateCucumberHtml(cucumberJson) {
       }
     }
     
+    function getFileIcon(mimeType) {
+      if (!mimeType) return 'bi-file-earmark';
+      if (mimeType.includes('json')) return 'bi-filetype-json';
+      if (mimeType.includes('xml')) return 'bi-filetype-xml';
+      if (mimeType.includes('csv')) return 'bi-filetype-csv';
+      if (mimeType.includes('yaml')) return 'bi-filetype-yml';
+      if (mimeType.includes('pdf')) return 'bi-filetype-pdf';
+      if (mimeType.includes('text')) return 'bi-file-earmark-text';
+      return 'bi-file-earmark';
+    }
+    
+    function truncateFileName(fileName, maxLength = 20) {
+      if (!fileName || fileName.length <= maxLength) return fileName;
+      const extension = fileName.substring(fileName.lastIndexOf('.'));
+      const nameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
+      if (nameWithoutExt.length + extension.length <= maxLength) return fileName;
+      const charsToShow = maxLength - extension.length - 3; // 3 for '...'
+      const frontChars = Math.ceil(charsToShow / 2);
+      const backChars = Math.floor(charsToShow / 2);
+      return nameWithoutExt.substring(0, frontChars) + '...' + nameWithoutExt.substring(nameWithoutExt.length - backChars) + extension;
+    }
+    
     function renderReport() {
       // Render stats
       const stats = calculateStats(CUCUMBER_DATA);
@@ -420,13 +490,46 @@ export async function generateCucumberHtml(cucumberJson) {
             const errorHtml = step.result?.error_message ? 
               \`<div class="step-error">\${step.result.error_message}</div>\` : '';
             
-            // Handle embedded images
-            const imagesHtml = step.embeddings?.map(emb => {
-              if (emb.mime_type?.startsWith('image/')) {
-                return \`<img class="step-image" src="data:\${emb.mime_type};base64,\${emb.data}" alt="Step screenshot" />\`;
+            // Handle embeddings (images and documents)
+            let attachmentsHtml = '';
+            
+            if (step.embeddings && step.embeddings.length > 0) {
+              const images = [];
+              const documents = [];
+              
+              step.embeddings.forEach(emb => {
+                if (emb.mime_type?.startsWith('image/')) {
+                  images.push(emb);
+                } else {
+                  documents.push(emb);
+                }
+              });
+              
+              // Render all attachments (images and documents) with consistent styling
+              const allAttachments = [];
+              
+              // Add images
+              images.forEach(emb => {
+                allAttachments.push(\`<div class="attachment image-attachment" onclick="window.open('data:\${emb.mime_type};base64,\${emb.data}', '_blank')" title="Click to view full size">
+                  <img class="attachment-image" src="data:\${emb.mime_type};base64,\${emb.data}" alt="Step screenshot" />
+                </div>\`);
+              });
+              
+              // Add documents
+              documents.forEach((emb, idx) => {
+                const fileName = emb.name || \`attachment_\${idx + 1}\`;
+                const iconClass = getFileIcon(emb.mime_type);
+                const dataUrl = \`data:\${emb.mime_type};base64,\${emb.data}\`;
+                allAttachments.push(\`<a href="\${dataUrl}" download="\${fileName}" class="attachment" title="\${fileName}">
+                  <i class="bi \${iconClass} attachment-icon"></i>
+                  <div class="attachment-name">\${truncateFileName(fileName)}</div>
+                </a>\`);
+              });
+              
+              if (allAttachments.length > 0) {
+                attachmentsHtml = \`<div class="step-attachments">\${allAttachments.join('')}</div>\`;
               }
-              return '';
-            }).join('') || '';
+            }
             
             return \`
               <div class="step \${stepStatus}">
@@ -438,7 +541,7 @@ export async function generateCucumberHtml(cucumberJson) {
                     \${duration ? \`<span class="step-duration">\${duration}</span>\` : ''}
                   </div>
                   \${errorHtml}
-                  \${imagesHtml}
+                  \${attachmentsHtml}
                 </div>
               </div>
             \`;
