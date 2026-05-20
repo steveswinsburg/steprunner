@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button, ButtonGroup, Image, Badge } from 'react-bootstrap';
-import { FaCheckCircle, FaTimesCircle, FaForward, FaQuestionCircle, FaFileAlt, FaDownload } from 'react-icons/fa';
+import { FaCheckCircle, FaTimesCircle, FaForward, FaQuestionCircle } from 'react-icons/fa';
 import DragDropZone from '../components/DragDropZone';
 import FeatureSidebar from '../components/FeatureSidebar';
 import db from '../db/indexedDb';
@@ -20,6 +20,18 @@ function SessionViewer() {
   const [stepMetadata, setStepMetadata] = useState({});
   const [scenarioImages, setScenarioImages] = useState({});
   const [dragOverStep, setDragOverStep] = useState(null);
+
+  // Helper function to get Bootstrap icon class for file types
+  const getFileIcon = (mimeType) => {
+    if (!mimeType) return 'bi-file-earmark';
+    if (mimeType.includes('json')) return 'bi-filetype-json';
+    if (mimeType.includes('xml')) return 'bi-filetype-xml';
+    if (mimeType.includes('csv')) return 'bi-filetype-csv';
+    if (mimeType.includes('yaml')) return 'bi-filetype-yml';
+    if (mimeType.includes('pdf')) return 'bi-filetype-pdf';
+    if (mimeType.includes('text')) return 'bi-file-earmark-text';
+    return 'bi-file-earmark';
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -674,9 +686,10 @@ function SessionViewer() {
                                   />
                                 ) : (
                                   <div
-                                    className="border rounded p-3 d-flex flex-column align-items-center"
+                                    className="border rounded p-3 d-flex flex-column align-items-center justify-content-center"
                                     style={{ 
-                                      minWidth: '150px', 
+                                      width: '200px',
+                                      height: '200px',
                                       backgroundColor: '#f8f9fa',
                                       cursor: 'pointer'
                                     }}
@@ -692,14 +705,10 @@ function SessionViewer() {
                                       URL.revokeObjectURL(url);
                                     }}
                                   >
-                                    <FaFileAlt size={30} className="mb-2 text-secondary" />
-                                    <small className="text-muted text-center" style={{ wordBreak: 'break-word', maxWidth: '150px' }}>
+                                    <i className={`bi ${getFileIcon(img.mimeType)}`} style={{ fontSize: '48px', color: '#6c757d', marginBottom: '12px' }}></i>
+                                    <small className="text-muted text-center" style={{ wordBreak: 'break-word', maxWidth: '180px' }}>
                                       {img.fileName}
                                     </small>
-                                    <Badge bg="secondary" className="mt-1">
-                                      <FaDownload className="me-1" />
-                                      Download
-                                    </Badge>
                                   </div>
                                 )}
                                 <Button
