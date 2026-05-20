@@ -17,4 +17,12 @@ db.version(2).stores({
   images: '++id, sessionId, featureId, scenarioIndex, stepIndex, uploadedAt'
 });
 
+db.version(3).stores({
+  sessions: '++id, name, createdAt',
+  features: '++id, sessionId, title, content',
+  steps: '[sessionId+featureId+scenarioIndex+stepIndex], sessionId, featureId',
+  activities: '++id, sessionId, timestamp',
+  images: '++id, sessionId, featureId, scenarioIndex, stepIndex, uploadedAt'
+});
+
 export default db;
