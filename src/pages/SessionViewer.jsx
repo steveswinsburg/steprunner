@@ -544,7 +544,7 @@ function SessionViewer() {
             {parsed.scenarios.map((sc, sIdx) => (
               <div key={sIdx} className="mb-4">
                 <div className="d-flex justify-content-between align-items-center mb-3">
-                  <div>
+                  <div style={{ flexGrow: 1, minWidth: 0, marginRight: '12px' }}>
                     <h5 className="mb-0 d-inline" style={{ lineHeight: 1.2 }}>
                       Scenario: {sc.title}
                       {sc.tags && sc.tags.length > 0 && (
@@ -558,7 +558,7 @@ function SessionViewer() {
                       )}
                     </h5>
                   </div>
-                  <ButtonGroup>
+                  <ButtonGroup style={{ flexShrink: 0 }}>
                     <Button 
                       size="sm" 
                       variant="success" 
