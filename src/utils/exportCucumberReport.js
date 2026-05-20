@@ -68,15 +68,21 @@ export async function exportCucumberReport(sessionId) {
         const keyword = match ? `${match[1]} ` : '';
         const name = match ? match[2] : stepText;
 
-        // Get embeddings (images) for this step
+        // Get embeddings (images and text files) for this step
         const stepImages = images.filter(
           img => img.scenarioIndex === scenarioIndex && img.stepIndex === stepIndex
         );
 
-        const embeddings = stepImages.map(img => ({
-          data: img.imageData,
-          mime_type: img.mimeType
-        }));
+        // Separate images and text files
+        const imageEmbeddings = stepImages
+          .filter(img => !img.fileType || img.fileType === 'image')
+          .map(img => ({
+            data: img.imageData,
+            mime_type: img.mimeType
+          }));
+
+        // Text files will be added to ZIP as separate files
+        const textFiles = stepImages.filter(img => img.fileType === 'text');
 
         return {
           arguments: [],
@@ -91,7 +97,9 @@ export async function exportCucumberReport(sessionId) {
             duration: stepKey?.duration || 0,
             ...(stepKey?.errorMessage && { error_message: stepKey.errorMessage })
           },
-          ...(embeddings.length > 0 && { embeddings })
+          ...(imageEmbeddings.length > 0 && { embeddings: imageEmbeddings }),
+          // Store text files metadata for later extraction
+          ...(textFiles.length > 0 && { _textFiles: textFiles })
         };
       });
 
@@ -141,10 +149,31 @@ function mapStatusToCucumber(status) {
 }
 
 /**
- * Download the Cucumber report as a ZIP file containing JSON, HTML, and audit log
+ * Download the Cucumber report as a ZIP file containing JSON, HTML, audit log, and attachments
  */
 export async function downloadCucumberReport(sessionId) {
   const report = await exportCucumberReport(sessionId);
+  
+  // Extract text files from report and create attachments folder
+  const textFileAttachments = [];
+  report.forEach((feature, featureIdx) => {
+    feature.elements?.forEach((element, elementIdx) => {
+      element.steps?.forEach((step, stepIdx) => {
+        if (step._textFiles && step._textFiles.length > 0) {
+          step._textFiles.forEach((file, fileIdx) => {
+            textFileAttachments.push({
+              path: `attachments/feature${featureIdx + 1}_scenario${elementIdx + 1}_step${stepIdx + 1}/${file.fileName}`,
+              data: file.imageData,
+              mimeType: file.mimeType
+            });
+          });
+          // Remove _textFiles from export JSON (it's not part of Cucumber spec)
+          delete step._textFiles;
+        }
+      });
+    });
+  });
+  
   const json = JSON.stringify(report, null, 2);
   
   // Generate HTML report
@@ -158,6 +187,12 @@ export async function downloadCucumberReport(sessionId) {
   zip.file(`cucumber-report-${sessionId}.json`, json);
   zip.file(`cucumber-report-${sessionId}.html`, html);
   zip.file(`audit-log-${sessionId}.txt`, auditLog);
+  
+  // Add text file attachments to ZIP
+  textFileAttachments.forEach(attachment => {
+    const binaryData = atob(attachment.data);
+    zip.file(attachment.path, binaryData);
+  });
   
   // Generate ZIP blob
   const zipBlob = await zip.generateAsync({ type: 'blob' });
