@@ -68,10 +68,10 @@ function SessionViewer() {
               });
             }
 
-            // Store images from the report
+            // Store attachments from the report
             if (scenario.images && scenario.images.length > 0) {
               for (const image of scenario.images) {
-                await db.images.add({
+                await db.attachments.add({
                   sessionId: Number(sessionId),
                   featureId,
                   scenarioIndex: sIdx,
@@ -137,8 +137,8 @@ function SessionViewer() {
     setStepResults(mapped);
     setStepMetadata(metadata);
 
-    // Load images for this feature
-    const images = await db.images
+    // Load attachments for this feature
+    const images = await db.attachments
       .where({ sessionId: Number(sessionId), featureId: feature.id })
       .toArray();
 
@@ -278,10 +278,10 @@ function SessionViewer() {
   };
 
   const handleDeleteImage = async (imageId, scenarioIndex, stepIndex) => {
-    await db.images.delete(imageId);
+    await db.attachments.delete(imageId);
     
-    // Reload images
-    const images = await db.images
+    // Reload attachments
+    const images = await db.attachments
       .where({ sessionId: Number(sessionId), featureId: selectedFeature.id })
       .toArray();
 
@@ -317,9 +317,19 @@ function SessionViewer() {
     setDragOverStep(null);
 
     const files = Array.from(e.dataTransfer.files);
-    const validFiles = files.filter(file => 
-      file.type.startsWith('image/') || file.type === 'text/plain'
-    );
+    // Support images and various document types
+    const validFiles = files.filter(file => {
+      return file.type.startsWith('image/') || 
+             file.type === 'text/plain' ||
+             file.type === 'application/json' ||
+             file.type === 'application/xml' ||
+             file.type === 'text/xml' ||
+             file.type === 'text/csv' ||
+             file.type === 'application/yaml' ||
+             file.type === 'text/yaml' ||
+             file.type === 'application/pdf' ||
+             file.name.match(/\.(txt|log|json|xml|csv|ya?ml|pdf)$/i);
+    });
     
     if (validFiles.length === 0) {
       return;
@@ -331,7 +341,7 @@ function SessionViewer() {
         const reader = new FileReader();
         reader.onload = (e) => {
           const base64Data = e.target.result.split(',')[1];
-          const fileType = file.type.startsWith('image/') ? 'image' : 'text';
+          const fileType = file.type.startsWith('image/') ? 'image' : 'document';
           
           resolve({
             sessionId: Number(sessionId),
@@ -352,10 +362,10 @@ function SessionViewer() {
     const fileData = await Promise.all(fileReads);
     
     // Add all files to database
-    await db.images.bulkAdd(fileData);
+    await db.attachments.bulkAdd(fileData);
 
-    // Reload images
-    const images = await db.images
+    // Reload attachments
+    const images = await db.attachments
       .where({ sessionId: Number(sessionId), featureId: selectedFeature.id })
       .toArray();
 
