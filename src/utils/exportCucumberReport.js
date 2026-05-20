@@ -1,6 +1,7 @@
 import db from '../db/indexedDb';
 import { generateCucumberHtml } from './exportCucumberHtml';
 import { exportAuditLog } from './exportAuditLog';
+import parseFeature from './parseFeature';
 import JSZip from 'jszip';
 
 
@@ -25,7 +26,6 @@ export async function exportCucumberReport(sessionId) {
       parsedFeature = JSON.parse(feature.content);
     } catch {
       // If not JSON, skip metadata (was a plain .feature file)
-      const parseFeature = require('./parseFeature').default;
       parsedFeature = parseFeature(feature.content);
     }
 
