@@ -3,14 +3,40 @@ import { useDropzone } from 'react-dropzone';
 import { Card, Button, Image, Row, Col, Badge } from 'react-bootstrap';
 import { FaFileAlt, FaImage } from 'react-icons/fa';
 
+// Supported file types for test attachments
+const ALLOWED_FILE_TYPES = {
+  // Images
+  'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp'],
+  // Text files
+  'text/plain': ['.txt', '.log'],
+  // Structured data
+  'application/json': ['.json'],
+  'application/xml': ['.xml'],
+  'text/xml': ['.xml'],
+  'text/csv': ['.csv'],
+  'application/yaml': ['.yaml', '.yml'],
+  'text/yaml': ['.yaml', '.yml'],
+  // Other common formats
+  'application/pdf': ['.pdf']
+};
+
 function FileUploadZone({ onFileUpload, existingFiles = [] }) {
   const [previewFiles, setPreviewFiles] = useState(existingFiles);
 
   const onDrop = useCallback((acceptedFiles) => {
-    // Accept both images and text files
-    const validFiles = acceptedFiles.filter(file => 
-      file.type.startsWith('image/') || file.type === 'text/plain'
-    );
+    // Categorize files by type
+    const validFiles = acceptedFiles.filter(file => {
+      return file.type.startsWith('image/') || 
+             file.type === 'text/plain' ||
+             file.type === 'application/json' ||
+             file.type === 'application/xml' ||
+             file.type === 'text/xml' ||
+             file.type === 'text/csv' ||
+             file.type === 'application/yaml' ||
+             file.type === 'text/yaml' ||
+             file.type === 'application/pdf' ||
+             file.name.match(/\.(txt|log|json|xml|csv|ya?ml|pdf)$/i);
+    });
 
     // Read each file as base64
     Promise.all(
@@ -18,12 +44,12 @@ function FileUploadZone({ onFileUpload, existingFiles = [] }) {
         new Promise((resolve) => {
           const reader = new FileReader();
           reader.onload = (e) => {
-            const fileType = file.type.startsWith('image/') ? 'image' : 'text';
+            const fileType = file.type.startsWith('image/') ? 'image' : 'document';
             resolve({
               fileName: file.name,
               fileType: fileType,
               imageData: e.target.result.split(',')[1], // Remove data:...; base64, prefix
-              mimeType: file.type,
+              mimeType: file.type || 'application/octet-stream',
               uploadedAt: new Date().toISOString()
             });
           };
@@ -38,10 +64,7 @@ function FileUploadZone({ onFileUpload, existingFiles = [] }) {
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: {
-      'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp'],
-      'text/plain': ['.txt', '.log']
-    },
+    accept: ALLOWED_FILE_TYPES,
     multiple: true
   });
 
@@ -74,7 +97,7 @@ function FileUploadZone({ onFileUpload, existingFiles = [] }) {
         <p className="mb-0">
           {isDragActive
             ? 'Drop files here...'
-            : '📎 Add files (images or .txt logs - drag & drop or click)'}
+            : '📎 Add files (images, logs, JSON, XML, CSV, PDF, etc. - drag & drop or click)'}
         </p>
       </Card>
 
@@ -99,7 +122,7 @@ function FileUploadZone({ onFileUpload, existingFiles = [] }) {
                   </div>
                 )}
                 <Card.Body className="p-2 text-center">
-                  {file.fileType === 'text' && (
+                  {file.fileType !== 'image' && (
                     <Button 
                       variant="outline-primary" 
                       size="sm" 
