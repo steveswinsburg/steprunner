@@ -1,6 +1,7 @@
 import db from '../db/indexedDb';
 import { generateCucumberHtml } from './exportCucumberHtml';
 import { exportAuditLog } from './exportAuditLog';
+import parseFeature from './parseFeature';
 import JSZip from 'jszip';
 
 
@@ -25,14 +26,22 @@ export async function exportCucumberReport(sessionId) {
       parsedFeature = JSON.parse(feature.content);
     } catch {
       // If not JSON, skip metadata (was a plain .feature file)
-      const parseFeature = require('./parseFeature').default;
       parsedFeature = parseFeature(feature.content);
     }
+
+    console.log('parseFeature function:', parseFeature);
+    console.log('parsedFeature result:', parsedFeature);
 
     // Fetch all steps for this feature
     const steps = await db.steps
       .where({ sessionId, featureId: feature.id })
       .toArray();
+    
+    console.log('Steps from DB:', steps);
+    if (steps.length > 0) {
+      console.log('First step example (full):', JSON.stringify(steps[0], null, 2));
+      console.log('All step statuses:', steps.map((s, i) => `${i}: ${s.status}`));
+    }
 
     // Fetch all images for this feature
     const images = await db.images
@@ -41,11 +50,18 @@ export async function exportCucumberReport(sessionId) {
 
     // Build scenarios (elements in Cucumber JSON)
     const elements = parsedFeature.scenarios.map((scenario, scenarioIndex) => {
+      console.log(`\nProcessing scenario ${scenarioIndex}:`, scenario.title);
+      console.log('Scenario steps:', scenario.steps);
+      
       // Build steps for this scenario
       const scenarioSteps = scenario.steps.map((stepText, stepIndex) => {
         const stepKey = steps.find(
           s => s.scenarioIndex === scenarioIndex && s.stepIndex === stepIndex
         );
+        
+        console.log(`  Step ${stepIndex}: "${stepText}"`);
+        console.log(`    Found stepKey:`, stepKey);
+        console.log(`    Status: ${stepKey?.status}`);
 
         // Extract keyword and name from step text
         const match = stepText.match(/^(Given|When|Then|And|But)\s+(.+)$/);
