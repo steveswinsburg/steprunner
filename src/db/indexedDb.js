@@ -20,7 +20,7 @@ db.version(2).stores({
 db.version(3).stores({
   sessions: '++id, name, createdAt',
   features: '++id, sessionId, title, content',
-  steps: '[sessionId+featureId+scenarioIndex+stepIndex], sessionId, featureId',
+  steps: '[sessionId+featureId+scenarioIndex+stepIndex], [sessionId+featureId], sessionId, featureId',
   activities: '++id, sessionId, timestamp',
   images: '++id, sessionId, featureId, scenarioIndex, stepIndex, uploadedAt'
 });
