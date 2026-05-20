@@ -68,21 +68,17 @@ export async function exportCucumberReport(sessionId) {
         const keyword = match ? `${match[1]} ` : '';
         const name = match ? match[2] : stepText;
 
-        // Get embeddings (images and document files) for this step
-        const stepImages = images.filter(
+        // Get all attachments (images and document files) for this step
+        const stepAttachments = images.filter(
           img => img.scenarioIndex === scenarioIndex && img.stepIndex === stepIndex
         );
 
-        // Separate images and document files
-        const imageEmbeddings = stepImages
-          .filter(img => !img.fileType || img.fileType === 'image')
-          .map(img => ({
-            data: img.imageData,
-            mime_type: img.mimeType
-          }));
-
-        // Document files (logs, JSON, XML, etc.) will be added to ZIP as separate files
-        const documentFiles = stepImages.filter(img => img.fileType === 'document');
+        // All attachments go into embeddings (Cucumber supports any MIME type)
+        const embeddings = stepAttachments.map(attachment => ({
+          data: attachment.imageData,
+          mime_type: attachment.mimeType,
+          ...(attachment.fileName && { name: attachment.fileName })
+        }));
 
         return {
           arguments: [],
@@ -97,9 +93,7 @@ export async function exportCucumberReport(sessionId) {
             duration: stepKey?.duration || 0,
             ...(stepKey?.errorMessage && { error_message: stepKey.errorMessage })
           },
-          ...(imageEmbeddings.length > 0 && { embeddings: imageEmbeddings }),
-          // Store document files metadata for later extraction
-          ...(documentFiles.length > 0 && { _documentFiles: documentFiles })
+          ...(embeddings.length > 0 && { embeddings })
         };
       });
 
@@ -154,21 +148,24 @@ function mapStatusToCucumber(status) {
 export async function downloadCucumberReport(sessionId) {
   const report = await exportCucumberReport(sessionId);
   
-  // Extract document files from report and create attachments folder
-  const documentAttachments = [];
+  // Optionally extract non-image attachments to separate files for convenience
+  // (they're already embedded in the JSON, but separate files are easier to view)
+  const fileAttachments = [];
   report.forEach((feature, featureIdx) => {
     feature.elements?.forEach((element, elementIdx) => {
       element.steps?.forEach((step, stepIdx) => {
-        if (step._documentFiles && step._documentFiles.length > 0) {
-          step._documentFiles.forEach((file, fileIdx) => {
-            documentAttachments.push({
-              path: `attachments/feature${featureIdx + 1}_scenario${elementIdx + 1}_step${stepIdx + 1}/${file.fileName}`,
-              data: file.imageData,
-              mimeType: file.mimeType
-            });
+        if (step.embeddings && step.embeddings.length > 0) {
+          step.embeddings.forEach((embedding, embIdx) => {
+            // Extract non-image files as separate files
+            if (embedding.mime_type && !embedding.mime_type.startsWith('image/')) {
+              const fileName = embedding.name || `attachment_${embIdx + 1}`;
+              fileAttachments.push({
+                path: `attachments/feature${featureIdx + 1}_scenario${elementIdx + 1}_step${stepIdx + 1}/${fileName}`,
+                data: embedding.data,
+                mimeType: embedding.mime_type
+              });
+            }
           });
-          // Remove _documentFiles from export JSON (it's not part of Cucumber spec)
-          delete step._documentFiles;
         }
       });
     });
@@ -188,8 +185,8 @@ export async function downloadCucumberReport(sessionId) {
   zip.file(`cucumber-report-${sessionId}.html`, html);
   zip.file(`audit-log-${sessionId}.txt`, auditLog);
   
-  // Add document attachments to ZIP
-  documentAttachments.forEach(attachment => {
+  // Add file attachments to ZIP (for convenience - they're also in embeddings)
+  fileAttachments.forEach(attachment => {
     const binaryData = atob(attachment.data);
     zip.file(attachment.path, binaryData);
   });
