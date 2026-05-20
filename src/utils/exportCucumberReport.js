@@ -1,7 +1,7 @@
 import db from '../db/indexedDb';
-import { generateCucumberHtml } from './exportCucumberHtml.jsx';
+import { generateCucumberHtml } from './exportCucumberHtml';
 import { exportAuditLog } from './exportAuditLog';
-import parseFeature from './parseFeature.jsx';
+import parseFeature from './parseFeature';
 import JSZip from 'jszip';
 
 
