@@ -681,15 +681,15 @@ function SessionViewer() {
                                   <Image
                                     src={`data:${img.mimeType};base64,${img.imageData}`}
                                     thumbnail
-                                    style={{ maxWidth: '200px', cursor: 'pointer' }}
+                                    style={{ maxHeight: '120px', cursor: 'pointer' }}
                                     onClick={() => window.open(`data:${img.mimeType};base64,${img.imageData}`, '_blank')}
                                   />
                                 ) : (
                                   <div
                                     className="border rounded p-3 d-flex flex-column align-items-center justify-content-center"
                                     style={{ 
-                                      width: '200px',
-                                      height: '200px',
+                                      width: '120px',
+                                      height: '120px',
                                       backgroundColor: '#f8f9fa',
                                       cursor: 'pointer'
                                     }}
@@ -705,8 +705,8 @@ function SessionViewer() {
                                       URL.revokeObjectURL(url);
                                     }}
                                   >
-                                    <i className={`bi ${getFileIcon(img.mimeType)}`} style={{ fontSize: '48px', color: '#6c757d', marginBottom: '12px' }}></i>
-                                    <small className="text-muted text-center" style={{ wordBreak: 'break-word', maxWidth: '180px' }}>
+                                    <i className={`bi ${getFileIcon(img.mimeType)}`} style={{ fontSize: '32px', color: '#6c757d', marginBottom: '8px' }}></i>
+                                    <small className="text-muted text-center" style={{ wordBreak: 'break-word', maxWidth: '100px', fontSize: '0.75rem' }}>
                                       {img.fileName}
                                     </small>
                                   </div>
