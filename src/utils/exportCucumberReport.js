@@ -143,28 +143,57 @@ function mapStatusToCucumber(status) {
 }
 
 /**
+ * Get file extension from MIME type
+ */
+function getFileExtension(mimeType, fileName) {
+  if (fileName && fileName.includes('.')) {
+    return ''; // Already has extension
+  }
+  
+  const mimeToExt = {
+    'image/png': '.png',
+    'image/jpeg': '.jpg',
+    'image/jpg': '.jpg',
+    'image/gif': '.gif',
+    'image/webp': '.webp',
+    'image/svg+xml': '.svg',
+    'application/json': '.json',
+    'application/xml': '.xml',
+    'text/xml': '.xml',
+    'text/plain': '.txt',
+    'text/csv': '.csv',
+    'application/yaml': '.yaml',
+    'text/yaml': '.yaml',
+    'application/pdf': '.pdf'
+  };
+  
+  return mimeToExt[mimeType] || '.dat';
+}
+
+/**
  * Download the Cucumber report as a ZIP file containing JSON, HTML, audit log, and attachments
  */
 export async function downloadCucumberReport(sessionId) {
   const report = await exportCucumberReport(sessionId);
   
-  // Optionally extract non-image attachments to separate files for convenience
-  // (they're already embedded in the JSON, but separate files are easier to view)
+  // Extract ALL attachments to separate files for convenience
+  // They're embedded in the JSON, but separate files are easier to view/share
   const fileAttachments = [];
   report.forEach((feature, featureIdx) => {
     feature.elements?.forEach((element, elementIdx) => {
       element.steps?.forEach((step, stepIdx) => {
         if (step.embeddings && step.embeddings.length > 0) {
           step.embeddings.forEach((embedding, embIdx) => {
-            // Extract non-image files as separate files
-            if (embedding.mime_type && !embedding.mime_type.startsWith('image/')) {
-              const fileName = embedding.name || `attachment_${embIdx + 1}`;
-              fileAttachments.push({
-                path: `attachments/feature${featureIdx + 1}_scenario${elementIdx + 1}_step${stepIdx + 1}/${fileName}`,
-                data: embedding.data,
-                mimeType: embedding.mime_type
-              });
-            }
+            // Extract all attachments (images and documents)
+            const fileName = embedding.name || `attachment_${embIdx + 1}`;
+            const ext = getFileExtension(embedding.mime_type, fileName);
+            const finalFileName = fileName.includes('.') ? fileName : `${fileName}${ext}`;
+            
+            fileAttachments.push({
+              path: `attachments/feature${featureIdx + 1}_scenario${elementIdx + 1}_step${stepIdx + 1}/${finalFileName}`,
+              data: embedding.data,
+              mimeType: embedding.mime_type
+            });
           });
         }
       });
@@ -185,7 +214,7 @@ export async function downloadCucumberReport(sessionId) {
   zip.file(`cucumber-report-${sessionId}.html`, html);
   zip.file(`audit-log-${sessionId}.txt`, auditLog);
   
-  // Add file attachments to ZIP (for convenience - they're also in embeddings)
+  // Add all attachments to separate folder (also embedded in JSON)
   fileAttachments.forEach(attachment => {
     const binaryData = atob(attachment.data);
     zip.file(attachment.path, binaryData);

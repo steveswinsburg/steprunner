@@ -260,6 +260,36 @@ export async function generateCucumberHtml(cucumberJson) {
       border-radius: 4px;
     }
     
+    .step-attachments {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    
+    .attachment {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      font-size: 0.85em;
+      color: #495057;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    
+    .attachment:hover {
+      background: #e9ecef;
+      border-color: #adb5bd;
+    }
+    
+    .attachment-icon {
+      font-size: 1.2em;
+    }
+    
     .timestamp {
       font-size: 0.9em;
     }
@@ -380,6 +410,17 @@ export async function generateCucumberHtml(cucumberJson) {
       }
     }
     
+    function getFileIcon(mimeType) {
+      if (!mimeType) return '📄';
+      if (mimeType.includes('json')) return '📊';
+      if (mimeType.includes('xml')) return '📋';
+      if (mimeType.includes('csv')) return '📈';
+      if (mimeType.includes('yaml')) return '⚙️';
+      if (mimeType.includes('pdf')) return '📕';
+      if (mimeType.includes('text')) return '📝';
+      return '📎';
+    }
+    
     function renderReport() {
       // Render stats
       const stats = calculateStats(CUCUMBER_DATA);
@@ -420,13 +461,41 @@ export async function generateCucumberHtml(cucumberJson) {
             const errorHtml = step.result?.error_message ? 
               \`<div class="step-error">\${step.result.error_message}</div>\` : '';
             
-            // Handle embedded images
-            const imagesHtml = step.embeddings?.map(emb => {
-              if (emb.mime_type?.startsWith('image/')) {
-                return \`<img class="step-image" src="data:\${emb.mime_type};base64,\${emb.data}" alt="Step screenshot" />\`;
+            // Handle embeddings (images and documents)
+            let imagesHtml = '';
+            let attachmentsHtml = '';
+            
+            if (step.embeddings && step.embeddings.length > 0) {
+              const images = [];
+              const documents = [];
+              
+              step.embeddings.forEach(emb => {
+                if (emb.mime_type?.startsWith('image/')) {
+                  images.push(emb);
+                } else {
+                  documents.push(emb);
+                }
+              });
+              
+              // Render images
+              imagesHtml = images.map(emb => 
+                \`<img class="step-image" src="data:\${emb.mime_type};base64,\${emb.data}" alt="Step screenshot" />\`
+              ).join('');
+              
+              // Render document attachments
+              if (documents.length > 0) {
+                const attachmentLinks = documents.map((emb, idx) => {
+                  const fileName = emb.name || \`attachment_\${idx + 1}\`;
+                  const icon = getFileIcon(emb.mime_type);
+                  const dataUrl = \`data:\${emb.mime_type};base64,\${emb.data}\`;
+                  return \`<a href="\${dataUrl}" download="\${fileName}" class="attachment" title="\${emb.mime_type}">
+                    <span class="attachment-icon">\${icon}</span>
+                    <span>\${fileName}</span>
+                  </a>\`;
+                }).join('');
+                attachmentsHtml = \`<div class="step-attachments">\${attachmentLinks}</div>\`;
               }
-              return '';
-            }).join('') || '';
+            }
             
             return \`
               <div class="step \${stepStatus}">
@@ -439,6 +508,7 @@ export async function generateCucumberHtml(cucumberJson) {
                   </div>
                   \${errorHtml}
                   \${imagesHtml}
+                  \${attachmentsHtml}
                 </div>
               </div>
             \`;
