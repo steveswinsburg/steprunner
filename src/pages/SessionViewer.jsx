@@ -33,6 +33,18 @@ function SessionViewer() {
     return 'bi-file-earmark';
   };
 
+  // Helper function to truncate long filenames
+  const truncateFileName = (fileName, maxLength = 20) => {
+    if (!fileName || fileName.length <= maxLength) return fileName;
+    const extension = fileName.substring(fileName.lastIndexOf('.'));
+    const nameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
+    if (nameWithoutExt.length + extension.length <= maxLength) return fileName;
+    const charsToShow = maxLength - extension.length - 3; // 3 for '...'
+    const frontChars = Math.ceil(charsToShow / 2);
+    const backChars = Math.floor(charsToShow / 2);
+    return nameWithoutExt.substring(0, frontChars) + '...' + nameWithoutExt.substring(nameWithoutExt.length - backChars) + extension;
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       const loaded = await db.features
@@ -706,8 +718,8 @@ function SessionViewer() {
                                     }}
                                   >
                                     <i className={`bi ${getFileIcon(img.mimeType)}`} style={{ fontSize: '32px', color: '#6c757d', marginBottom: '8px' }}></i>
-                                    <small className="text-muted text-center" style={{ wordBreak: 'break-word', maxWidth: '100px', fontSize: '0.75rem' }}>
-                                      {img.fileName}
+                                    <small className="text-muted text-center" style={{ wordBreak: 'break-word', maxWidth: '100px', fontSize: '0.75rem' }} title={img.fileName}>
+                                      {truncateFileName(img.fileName)}
                                     </small>
                                   </div>
                                 )}
