@@ -1,5 +1,7 @@
 import db from '../db/indexedDb';
-import { downloadCucumberHtmlReport } from './exportCucumberHtml';
+import { generateCucumberHtml } from './exportCucumberHtml';
+import { exportAuditLog } from './exportAuditLog';
+import JSZip from 'jszip';
 
 
 /**
@@ -123,23 +125,36 @@ function mapStatusToCucumber(status) {
 }
 
 /**
- * Download the Cucumber report as JSON and HTML files
+ * Download the Cucumber report as a ZIP file containing JSON, HTML, and audit log
  */
 export async function downloadCucumberReport(sessionId) {
   const report = await exportCucumberReport(sessionId);
   const json = JSON.stringify(report, null, 2);
   
-  // Download JSON file
-  const jsonFilename = `cucumber-report-${sessionId}.json`;
-  const jsonDataUrl = 'data:application/json;charset=utf-8,' + encodeURIComponent(json);
+  // Generate HTML report
+  const html = await generateCucumberHtml(report);
   
-  const jsonLink = document.createElement('a');
-  jsonLink.href = jsonDataUrl;
-  jsonLink.download = jsonFilename;
-  document.body.appendChild(jsonLink);
-  jsonLink.click();
-  document.body.removeChild(jsonLink);
+  // Export audit log as text
+  const auditLog = await exportAuditLog(sessionId);
   
-  // Download HTML file
-  await downloadCucumberHtmlReport(sessionId, report);
+  // Create ZIP file
+  const zip = new JSZip();
+  zip.file(`cucumber-report-${sessionId}.json`, json);
+  zip.file(`cucumber-report-${sessionId}.html`, html);
+  zip.file(`audit-log-${sessionId}.txt`, auditLog);
+  
+  // Generate ZIP blob
+  const zipBlob = await zip.generateAsync({ type: 'blob' });
+  
+  // Download ZIP file
+  const zipUrl = URL.createObjectURL(zipBlob);
+  const link = document.createElement('a');
+  link.href = zipUrl;
+  link.download = `cucumber-report-${sessionId}.zip`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  
+  // Clean up the URL object
+  URL.revokeObjectURL(zipUrl);
 }
