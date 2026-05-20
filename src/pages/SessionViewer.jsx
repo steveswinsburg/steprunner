@@ -186,7 +186,9 @@ function SessionViewer() {
   };
 
   const handleMarkAllInScenario = async (scenarioIndex, status) => {
+    console.log('handleMarkAllInScenario called:', { scenarioIndex, status });
     const stepCount = parsed?.scenarios?.[scenarioIndex]?.steps?.length || 0;
+    console.log(`Marking ${stepCount} steps in scenario ${scenarioIndex}`);
     const currentUser = auth.currentUser;
 
     const updates = [];
@@ -201,7 +203,14 @@ function SessionViewer() {
       });
     }
 
-    await db.steps.bulkPut(updates);
+    console.log('Bulk saving steps to DB:', updates);
+
+    try {
+      await db.steps.bulkPut(updates);
+      console.log('All steps saved successfully');
+    } catch (error) {
+      console.error('Error saving steps:', error);
+    }
 
     await logActivity(`Marked all steps in Scenario ${scenarioIndex + 1} as "${status}"`);
 
