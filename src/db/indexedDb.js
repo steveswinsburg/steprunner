@@ -23,6 +23,10 @@ db.version(3).stores({
   steps: '[sessionId+featureId+scenarioIndex+stepIndex], [sessionId+featureId], sessionId, featureId',
   activities: '++id, sessionId, timestamp',
   attachments: '++id, sessionId, featureId, scenarioIndex, stepIndex, uploadedAt'
+}).upgrade(tx => {
+  // Clear existing data due to primary key change
+  // Fine for demo
+  return tx.table('steps').clear();
 });
 
 // Version 4: Support multiple file types (images, text, logs, JSON, XML, etc.)
