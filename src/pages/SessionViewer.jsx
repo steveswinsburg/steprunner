@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button, ButtonGroup, Image, Badge } from 'react-bootstrap';
 import { FaCheckCircle, FaTimesCircle, FaForward, FaQuestionCircle } from 'react-icons/fa';
@@ -22,6 +22,7 @@ function SessionViewer() {
   const [dragOverStep, setDragOverStep] = useState(null);
   const [featureComment, setFeatureComment] = useState('');
   const [commentExpanded, setCommentExpanded] = useState(false);
+  const uploadZoneRef = useRef(null);
 
   // Helper function to get Bootstrap icon class for file types
   const getFileIcon = (mimeType) => {
@@ -325,6 +326,15 @@ function SessionViewer() {
     await logActivity(`Updated feature comment`);
   };
 
+  const handleBackToUpload = () => {
+    setSelectedFeature(null);
+    setParsed(null);
+    // Scroll to upload zone
+    setTimeout(() => {
+      uploadZoneRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  };
+
   const handleDeleteImage = async (imageId, scenarioIndex, stepIndex) => {
     await db.attachments.delete(imageId);
     
@@ -488,7 +498,13 @@ function SessionViewer() {
 
       <div className="p-4 flex-grow-1" style={{ minWidth: 0 }}>
         <div className="d-flex justify-content-between align-items-center">
-          <h2>Session #{sessionId}</h2>
+          <h2 
+            onClick={handleBackToUpload}
+            style={{ cursor: 'pointer' }}
+            title="Click to add more features"
+          >
+            Session #{sessionId}
+          </h2>
           <div className="d-flex gap-2">
             <Button variant="primary" size="sm" onClick={handleExportReport}>
               Export Report
@@ -809,7 +825,7 @@ function SessionViewer() {
           </div>
         )}
 
-        <div className="mt-4">
+        <div className="mt-4" ref={uploadZoneRef}>
           <DragDropZone onFiles={handleFileUpload} />
         </div>
       </div>
