@@ -18,37 +18,45 @@ function FeatureSidebar({ features, selectedId, onSelect }) {
      <div className="flex-shrink-0 overflow-hidden mb-5" style={{ width: '295px' }}>
         <h5 className="p-3">Features</h5>
         <ListGroup variant="flush">
-          {features.map((f) => (
-            <ListGroup.Item
-              key={f.id}
-              active={f.id === selectedId}
-              action
-              onClick={() => onSelect(f)}
-              className="text-truncate"
-            >
-              
-             {f.title}
-
+          {features.length === 0 ? (
+            <ListGroup.Item className="text-muted fst-italic">
+              No features added yet
             </ListGroup.Item>
-          ))}
+          ) : (
+            features.map((f) => (
+              <ListGroup.Item
+                key={f.id}
+                active={f.id === selectedId}
+                action
+                onClick={() => onSelect(f)}
+                className="text-truncate"
+              >
+                
+               {f.title}
+
+              </ListGroup.Item>
+            ))
+          )}
         </ListGroup>
       </div>
       
-      <div className="overflow-auto mb-3" style={{ maxHeight: '500px', width: '295px' }}>
-        <h5 className="p-3">Activity</h5>
-        <ul className="list-unstyled small mb-0 px-3">
-          {activities.map((log, idx) => (
-            <li key={idx} className="mb-2">
-              <div>
-                <strong>{log.user}</strong> {log.message}{' '}
-                <span className="text-muted" style={{ fontSize: '0.65rem' }}>
-                  {new Date(log.timestamp).toLocaleTimeString()}
-                </span>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
+      {activities.length > 0 && (
+        <div className="overflow-auto mb-3" style={{ maxHeight: '500px', width: '295px' }}>
+          <h5 className="p-3">Activity</h5>
+          <ul className="list-unstyled small mb-0 px-3">
+            {activities.map((log, idx) => (
+              <li key={idx} className="mb-2">
+                <div>
+                  <strong>{log.user}</strong> {log.message}{' '}
+                  <span className="text-muted" style={{ fontSize: '0.65rem' }}>
+                    {new Date(log.timestamp).toLocaleTimeString()}
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </>
   );
 }
