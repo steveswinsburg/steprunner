@@ -20,6 +20,8 @@ function SessionViewer() {
   const [stepMetadata, setStepMetadata] = useState({});
   const [scenarioImages, setScenarioImages] = useState({});
   const [dragOverStep, setDragOverStep] = useState(null);
+  const [featureComment, setFeatureComment] = useState('');
+  const [commentExpanded, setCommentExpanded] = useState(false);
 
   // Helper function to get Bootstrap icon class for file types
   const getFileIcon = (mimeType) => {
@@ -69,7 +71,8 @@ function SessionViewer() {
           const featureId = await db.features.add({
             sessionId: Number(sessionId),
             title: parsedFeature.title,
-            content: JSON.stringify(parsedFeature) // Store parsed data as content
+            content: JSON.stringify(parsedFeature), // Store parsed data as content
+            comment: parsedFeature.comment || '' // Import comment field if present
           });
 
           // Store steps with metadata
@@ -128,6 +131,10 @@ function SessionViewer() {
 
   const handleSelectFeature = async (feature) => {
     setSelectedFeature(feature);
+    
+    // Load feature comment and expand if it exists
+    setFeatureComment(feature.comment || '');
+    setCommentExpanded(!!feature.comment);
     
     // Check if content is JSON (from Cucumber report) or plain text (.feature file)
     let parsedFeature;
@@ -299,6 +306,23 @@ function SessionViewer() {
       user: user?.displayName || user?.email || 'Unknown',
       message
     });
+  };
+
+  const handleSaveComment = async (comment) => {
+    if (!selectedFeature) return;
+    
+    await db.features.update(selectedFeature.id, { comment });
+    setFeatureComment(comment);
+    
+    // Update the selectedFeature object
+    setSelectedFeature(prev => ({ ...prev, comment }));
+    
+    // Update the features array to keep it in sync
+    setFeatures(prev => prev.map(f => 
+      f.id === selectedFeature.id ? { ...f, comment } : f
+    ));
+    
+    await logActivity(`Updated feature comment`);
   };
 
   const handleDeleteImage = async (imageId, scenarioIndex, stepIndex) => {
@@ -502,6 +526,36 @@ function SessionViewer() {
                   </span>
                 )}
               </h4>
+            </div>
+            
+            {/* Feature Comment Section */}
+            <div className="mb-3">
+              <Button
+                variant="link"
+                size="sm"
+                onClick={() => setCommentExpanded(!commentExpanded)}
+                className="p-0 text-decoration-none"
+                style={{ fontSize: '0.9rem' }}
+              >
+                {commentExpanded ? '▼' : '▶'} Notes/Comments
+              </Button>
+              {commentExpanded && (
+                <div className="mt-2">
+                  <textarea
+                    className="form-control"
+                    value={featureComment}
+                    onChange={(e) => setFeatureComment(e.target.value)}
+                    onBlur={(e) => handleSaveComment(e.target.value)}
+                    placeholder="Add notes or comments about this feature... (optional, non-standard field)"
+                    style={{ 
+                      resize: 'vertical',
+                      minHeight: '80px',
+                      fontFamily: 'inherit',
+                      fontSize: '0.95rem'
+                    }}
+                  />
+                </div>
+              )}
             </div>
             
             {/* Feature description */}

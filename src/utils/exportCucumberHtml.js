@@ -565,6 +565,7 @@ export async function generateCucumberHtml(cucumberJson) {
             <div class="feature-header">
               <div class="feature-title">\${feature.keyword}: \${feature.name}</div>
               \${feature.description ? \`<div class="feature-description">\${feature.description}</div>\` : ''}
+              \${feature.comment ? \`<div class="feature-description" style="border-left-color: #667eea; background: #f0f4ff;"><strong>Notes/Comments:</strong><br>\${feature.comment}</div>\` : ''}
             </div>
             \${scenariosHtml}
           </div>

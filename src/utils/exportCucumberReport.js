@@ -117,7 +117,9 @@ export async function exportCucumberReport(sessionId) {
       id: feature.title.toLowerCase().replace(/\s+/g, '-'),
       tags: [],
       uri: parsedFeature.uri || `features/${feature.title}.feature`,
-      elements
+      elements,
+      // Custom field for feature comment (non-standard but allowed)
+      ...(feature.comment && { comment: feature.comment })
     });
   }
 

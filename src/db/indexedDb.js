@@ -39,4 +39,13 @@ db.version(4).stores({
   attachments: '++id, sessionId, featureId, scenarioIndex, stepIndex, uploadedAt, fileType'
 });
 
+// Version 5: Add comment field to features for custom notes
+db.version(5).stores({
+  sessions: '++id, name, createdAt',
+  features: '++id, sessionId, title, content, comment',
+  steps: '[sessionId+featureId+scenarioIndex+stepIndex], [sessionId+featureId], sessionId, featureId',
+  activities: '++id, sessionId, timestamp',
+  attachments: '++id, sessionId, featureId, scenarioIndex, stepIndex, uploadedAt, fileType'
+});
+
 export default db;

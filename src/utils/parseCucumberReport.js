@@ -47,7 +47,8 @@ function parseFeature(featureData) {
     scenarios,
     uri: featureData.uri, // Preserve original feature file path
     description: featureData.description || '',
-    tags: featureTags
+    tags: featureTags,
+    comment: featureData.comment || '' // Import custom comment field if present
   };
 }
 
