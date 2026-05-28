@@ -546,7 +546,7 @@ function SessionViewer() {
                     value={featureComment}
                     onChange={(e) => setFeatureComment(e.target.value)}
                     onBlur={(e) => handleSaveComment(e.target.value)}
-                    placeholder="Add notes or comments about this feature... (optional, non-standard field)"
+                    placeholder="Add notes or comments about this feature..."
                     style={{ 
                       resize: 'vertical',
                       minHeight: '80px',
