@@ -267,6 +267,26 @@ function SessionViewer() {
     navigate('/');
   };
 
+  const handleDeleteFeature = async (featureId, featureTitle) => {
+    if (!window.confirm(`Are you sure you want to delete "${featureTitle}"?`)) return;
+
+    // Delete all related data
+    await db.steps.where({ sessionId: Number(sessionId), featureId }).delete();
+    await db.attachments.where({ sessionId: Number(sessionId), featureId }).delete();
+    await db.features.delete(featureId);
+
+    // Update local state
+    setFeatures(prev => prev.filter(f => f.id !== featureId));
+    
+    // If this was the selected feature, deselect it
+    if (selectedFeature?.id === featureId) {
+      setSelectedFeature(null);
+      setParsed(null);
+    }
+
+    await logActivity(`Deleted feature: ${featureTitle}`);
+  };
+
   const handleExportReport = async () => {
     try {
       await downloadCucumberReport(Number(sessionId));
@@ -493,6 +513,7 @@ function SessionViewer() {
           features={features}
           selectedId={selectedFeature?.id}
           onSelect={handleSelectFeature}
+          onDelete={handleDeleteFeature}
         />
       </div>
 
