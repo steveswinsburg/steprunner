@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button, ButtonGroup, Image, Badge } from 'react-bootstrap';
-import { FaCheckCircle, FaTimesCircle, FaForward, FaQuestionCircle } from 'react-icons/fa';
+import { FaCheckCircle, FaTimesCircle, FaForward, FaQuestionCircle, FaFile, FaFileAlt, FaFileCode, FaFileCsv, FaFilePdf } from 'react-icons/fa';
 import DragDropZone from '../components/DragDropZone';
 import FeatureSidebar from '../components/FeatureSidebar';
 import db from '../db/indexedDb';
@@ -24,16 +24,16 @@ function SessionViewer() {
   const [commentExpanded, setCommentExpanded] = useState(false);
   const uploadZoneRef = useRef(null);
 
-  // Helper function to get Bootstrap icon class for file types
+  // Helper function to get React icon component for file types
   const getFileIcon = (mimeType) => {
-    if (!mimeType) return 'bi-file-earmark';
-    if (mimeType.includes('json')) return 'bi-filetype-json';
-    if (mimeType.includes('xml')) return 'bi-filetype-xml';
-    if (mimeType.includes('csv')) return 'bi-filetype-csv';
-    if (mimeType.includes('yaml')) return 'bi-filetype-yml';
-    if (mimeType.includes('pdf')) return 'bi-filetype-pdf';
-    if (mimeType.includes('text')) return 'bi-file-earmark-text';
-    return 'bi-file-earmark';
+    if (!mimeType) return FaFile;
+    if (mimeType.includes('json')) return FaFileCode;
+    if (mimeType.includes('xml')) return FaFileCode;
+    if (mimeType.includes('csv')) return FaFileCsv;
+    if (mimeType.includes('yaml')) return FaFileCode;
+    if (mimeType.includes('pdf')) return FaFilePdf;
+    if (mimeType.includes('text')) return FaFileAlt;
+    return FaFile;
   };
 
   // Helper function to truncate long filenames
@@ -189,6 +189,12 @@ function SessionViewer() {
   const handleMarkStep = async (scenarioIndex, stepIndex, status) => {
     console.log('handleMarkStep called:', { scenarioIndex, stepIndex, status });
     const key = `${scenarioIndex}-${stepIndex}`;
+    const currentStatus = stepResults[key];
+
+    if (currentStatus === status) {
+      status = 'undo';
+    }
+
     const currentUser = auth.currentUser;
 
     const stepData = {
@@ -469,10 +475,13 @@ function SessionViewer() {
       <style>{`
         .image-container .delete-image-btn {
           opacity: 0;
-          transition: opacity 0.2s;
+          transition: opacity 0.2s, color 0.2s;
         }
         .image-container:hover .delete-image-btn {
           opacity: 1 !important;
+        }
+        .delete-image-btn:hover {
+          color: #bd2130 !important;
         }
         .step-drag-over {
           background-color: #e3f2fd !important;
@@ -808,20 +817,31 @@ function SessionViewer() {
                                       URL.revokeObjectURL(url);
                                     }}
                                   >
-                                    <i className={`bi ${getFileIcon(img.mimeType)}`} style={{ fontSize: '32px', color: '#6c757d', marginBottom: '8px' }}></i>
+                                    {React.createElement(getFileIcon(img.mimeType), { 
+                                      style: { fontSize: '32px', color: '#6c757d', marginBottom: '8px' } 
+                                    })}
                                     <small className="text-muted text-center" style={{ wordBreak: 'break-word', maxWidth: '100px', fontSize: '0.75rem' }} title={img.fileName}>
                                       {truncateFileName(img.fileName)}
                                     </small>
                                   </div>
                                 )}
-                                <Button
-                                  variant="danger"
-                                  size="sm"
+                                <button
                                   className="delete-image-btn"
                                   style={{ 
                                     position: 'absolute', 
                                     top: '5px', 
-                                    right: '5px'
+                                    right: '5px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    width: '24px',
+                                    height: '24px',
+                                    padding: 0,
+                                    border: 'none',
+                                    background: 'none',
+                                    color: '#dc3545',
+                                    cursor: 'pointer',
+                                    fontSize: '1.2rem'
                                   }}
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -831,8 +851,8 @@ function SessionViewer() {
                                     }
                                   }}
                                 >
-                                  ×
-                                </Button>
+                                  <FaTimesCircle />
+                                </button>
                               </div>
                             ))}
                           </div>
