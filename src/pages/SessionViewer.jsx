@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button, ButtonGroup, Image, Badge } from 'react-bootstrap';
-import { FaCheckCircle, FaTimesCircle, FaForward, FaQuestionCircle, FaFile, FaFileAlt, FaFileCode, FaFileCsv, FaFilePdf } from 'react-icons/fa';
+import { FaCheckCircle, FaTimesCircle, FaForward, FaQuestionCircle, FaPaperclip, FaFile, FaFileAlt, FaFileCode, FaFileCsv, FaFilePdf } from 'react-icons/fa';
 import DragDropZone from '../components/DragDropZone';
 import FeatureSidebar from '../components/FeatureSidebar';
 import db from '../db/indexedDb';
@@ -22,7 +22,9 @@ function SessionViewer() {
   const [dragOverStep, setDragOverStep] = useState(null);
   const [featureComment, setFeatureComment] = useState('');
   const [commentExpanded, setCommentExpanded] = useState(false);
+  const [attachmentTarget, setAttachmentTarget] = useState(null);
   const uploadZoneRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   // Helper function to get React icon component for file types
   const getFileIcon = (mimeType) => {
@@ -470,6 +472,88 @@ function SessionViewer() {
     await logActivity(`Added ${fileTypeText} to step ${scenarioIndex + 1}.${stepIndex + 1}`);
   };
 
+  const handleAttachmentClick = (scenarioIndex, stepIndex) => {
+    setAttachmentTarget({ scenarioIndex, stepIndex });
+    fileInputRef.current?.click();
+  };
+
+  const handleFileInputChange = async (e) => {
+    if (!attachmentTarget || !e.target.files?.length) {
+      setAttachmentTarget(null);
+      return;
+    }
+
+    const files = Array.from(e.target.files);
+    const validFiles = files.filter(file => {
+      return file.type.startsWith('image/') ||
+             file.type === 'text/plain' ||
+             file.type === 'application/json' ||
+             file.type === 'application/xml' ||
+             file.type === 'text/xml' ||
+             file.type === 'text/csv' ||
+             file.type === 'application/yaml' ||
+             file.type === 'text/yaml' ||
+             file.type === 'application/pdf' ||
+             file.name.match(/\.(txt|log|json|xml|csv|ya?ml|pdf)$/i);
+    });
+
+    if (validFiles.length === 0) {
+      setAttachmentTarget(null);
+      return;
+    }
+
+    const { scenarioIndex, stepIndex } = attachmentTarget;
+
+    const fileReads = validFiles.map(file =>
+      new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const base64Data = e.target.result.split(',')[1];
+          const fileType = file.type.startsWith('image/') ? 'image' : 'document';
+
+          resolve({
+            sessionId: Number(sessionId),
+            featureId: selectedFeature.id,
+            scenarioIndex,
+            stepIndex,
+            fileName: file.name,
+            fileType: fileType,
+            imageData: base64Data,
+            mimeType: file.type,
+            uploadedAt: new Date().toISOString()
+          });
+        };
+        reader.readAsDataURL(file);
+      })
+    );
+
+    const fileData = await Promise.all(fileReads);
+    await db.attachments.bulkAdd(fileData);
+
+    const images = await db.attachments
+      .where({ sessionId: Number(sessionId), featureId: selectedFeature.id })
+      .toArray();
+
+    const imagesByScenario = {};
+    images.forEach(img => {
+      const key = `${img.scenarioIndex}-${img.stepIndex}`;
+      if (!imagesByScenario[key]) {
+        imagesByScenario[key] = [];
+      }
+      imagesByScenario[key].push(img);
+    });
+
+    setScenarioImages(imagesByScenario);
+
+    const fileTypeText = validFiles.length === 1
+      ? (validFiles[0].type.startsWith('image/') ? 'image' : 'text file')
+      : `${validFiles.length} files`;
+    await logActivity(`Added ${fileTypeText} to step ${scenarioIndex + 1}.${stepIndex + 1}`);
+
+    setAttachmentTarget(null);
+    e.target.value = '';
+  };
+
   return (
     <div style={{ display: 'flex' }}>
       <style>{`
@@ -762,14 +846,22 @@ function SessionViewer() {
                             >
                               <FaForward />
                             </Button>
-                            <Button 
-                              variant={status === 'undo' ? 'info' : 'secondary'} 
+                            <Button
+                              variant={status === 'undo' ? 'info' : 'secondary'}
                               className={status !== 'undo' ? 'btn-step-action btn-undo-hint' : ''}
                               style={status !== 'undo' ? { opacity: 0.6 } : {}}
                               onClick={() => handleMarkStep(sIdx, stepIdx, 'undo')}
                               title="Mark as Undefined"
                             >
                               <FaQuestionCircle />
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              className="btn-step-action"
+                              onClick={() => handleAttachmentClick(sIdx, stepIdx)}
+                              title="Attach File"
+                            >
+                              <FaPaperclip />
                             </Button>
                           </ButtonGroup>
                         </div>
@@ -865,6 +957,15 @@ function SessionViewer() {
             ))}
           </div>
         )}
+
+        <input
+          type="file"
+          ref={fileInputRef}
+          style={{ display: 'none' }}
+          onChange={handleFileInputChange}
+          multiple
+          accept="image/*,.txt,.log,.json,.xml,.csv,.yml,.yaml,.pdf"
+        />
 
         <div className="mt-4" ref={uploadZoneRef}>
           <DragDropZone onFiles={handleFileUpload} />
