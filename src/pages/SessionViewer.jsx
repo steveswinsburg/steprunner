@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button, ButtonGroup, Image, Badge } from 'react-bootstrap';
-import { FaCheckCircle, FaTimesCircle, FaForward, FaQuestionCircle, FaPaperclip, FaFile, FaFileAlt, FaFileCode, FaFileCsv, FaFilePdf } from 'react-icons/fa';
+import { FaCheckCircle, FaTimesCircle, FaForward, FaQuestionCircle, FaPaperclip, FaPencilAlt, FaFile, FaFileAlt, FaFileCode, FaFileCsv, FaFilePdf } from 'react-icons/fa';
 import DragDropZone from '../components/DragDropZone';
 import FeatureSidebar from '../components/FeatureSidebar';
 import db from '../db/indexedDb';
@@ -23,6 +23,8 @@ function SessionViewer() {
   const [featureComment, setFeatureComment] = useState('');
   const [commentExpanded, setCommentExpanded] = useState(false);
   const [attachmentTarget, setAttachmentTarget] = useState(null);
+  const [featureNameEditing, setFeatureNameEditing] = useState(false);
+  const [featureNameValue, setFeatureNameValue] = useState('');
   const uploadZoneRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -354,6 +356,24 @@ function SessionViewer() {
     await logActivity(`Updated feature comment`);
   };
 
+  const handleStartEditFeatureName = () => {
+    setFeatureNameValue(parsed.title);
+    setFeatureNameEditing(true);
+  };
+
+  const handleSaveFeatureName = async () => {
+    if (!selectedFeature || !featureNameValue.trim()) return;
+
+    await db.features.update(selectedFeature.id, { title: featureNameValue.trim() });
+    setParsed(prev => ({ ...prev, title: featureNameValue.trim() }));
+    setSelectedFeature(prev => ({ ...prev, title: featureNameValue.trim() }));
+    setFeatures(prev => prev.map(f =>
+      f.id === selectedFeature.id ? { ...f, title: featureNameValue.trim() } : f
+    ));
+    setFeatureNameEditing(false);
+    await logActivity(`Updated feature name to "${featureNameValue.trim()}"`);
+  };
+
   const handleBackToUpload = () => {
     setSelectedFeature(null);
     setParsed(null);
@@ -645,7 +665,31 @@ function SessionViewer() {
           <div className="mt-4">
             <div className="mb-2">
               <h4 className="mb-0 d-inline" style={{ lineHeight: 1.2 }}>
-                Feature: {parsed.title}
+                Feature: {featureNameEditing ? (
+                  <input
+                    type="text"
+                    className="form-control form-control-sm d-inline-block"
+                    style={{ width: 'auto' }}
+                    value={featureNameValue}
+                    onChange={(e) => setFeatureNameValue(e.target.value)}
+                    onBlur={handleSaveFeatureName}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSaveFeatureName()}
+                    autoFocus
+                  />
+                ) : (
+                  <>
+                    {parsed.title}
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="p-0 ms-2 text-decoration-none"
+                      onClick={handleStartEditFeatureName}
+                      title="Edit feature name"
+                    >
+                      <FaPencilAlt />
+                    </Button>
+                  </>
+                )}
                 {parsed.tags && parsed.tags.length > 0 && (
                   <span className="ms-2">
                     {parsed.tags.map((tag, i) => (
