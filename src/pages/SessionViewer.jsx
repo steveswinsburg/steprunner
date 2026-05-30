@@ -54,6 +54,15 @@ function SessionViewer() {
 
   useEffect(() => {
     const fetchData = async () => {
+      // Reset selected feature when session changes
+      setSelectedFeature(null);
+      setParsed(null);
+      setStepResults({});
+      setStepMetadata({});
+      setScenarioImages({});
+      setFeatureComment('');
+      setCommentExpanded(false);
+
       const loaded = await db.features
         .where('sessionId')
         .equals(Number(sessionId))
