@@ -684,7 +684,7 @@ function SessionViewer() {
                       size="sm"
                       className="p-0 ms-2 text-decoration-none"
                       onClick={handleStartEditFeatureName}
-                      title="Edit feature name"
+                      title="Edit feature name" aria-label="Edit feature name"
                     >
                       <FaPencilAlt />
                     </Button>
