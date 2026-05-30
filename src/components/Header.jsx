@@ -1,10 +1,25 @@
-import React from 'react';
-import { Navbar, Container, Nav, Image, Button } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Navbar, Container, Nav, Image, Button, NavDropdown } from 'react-bootstrap';
+import { Link, useNavigate } from 'react-router-dom';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { FaChevronDown } from 'react-icons/fa';
+import db from '../db/indexedDb';
 
 function Header({ user, onLogout }) {
-
+  const navigate = useNavigate();
   const defaultAvatar = '/man-running.png';
+
+  const sessions = useLiveQuery(async () => {
+    return await db.sessions
+      .orderBy('createdAt')
+      .reverse()
+      .limit(10)
+      .toArray();
+  }, []) || [];
+
+  const handleSessionSelect = (sessionId) => {
+    navigate(`/session/${sessionId}`);
+  };
 
   return (
     <Navbar bg="dark" variant="dark" expand="lg">
@@ -12,7 +27,28 @@ function Header({ user, onLogout }) {
         <Navbar.Brand as={Link} to="/">StepRunner 🏃‍♂️</Navbar.Brand>
         <Nav>
           {user && (
-            <Nav.Link as={Link} to="/">Sessions</Nav.Link>
+            <NavDropdown
+              title={
+                <>
+                  Sessions <FaChevronDown size={10} />
+                </>
+              }
+              id="sessions-dropdown"
+              align="start"
+            >
+              {sessions.length === 0 ? (
+                <NavDropdown.Item disabled>No sessions yet</NavDropdown.Item>
+              ) : (
+                sessions.map((session) => (
+                  <NavDropdown.Item
+                    key={session.id}
+                    onClick={() => handleSessionSelect(session.id)}
+                  >
+                    {session.name}
+                  </NavDropdown.Item>
+                ))
+              )}
+            </NavDropdown>
           )}
         </Nav>
         <Nav className="ms-auto">
