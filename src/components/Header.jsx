@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Navbar, Container, Nav, Image, Button, NavDropdown } from 'react-bootstrap';
+import { Navbar, Container, Nav, Image, Button, Dropdown } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import db from '../db/indexedDb';
@@ -22,37 +22,29 @@ function Header({ user, onLogout }) {
 
   return (
     <Navbar bg="dark" variant="dark" expand="lg">
-      <style>{`
-        .sessions-dropdown-menu {
-          position: absolute;
-          top: 100%;
-          left: 0;
-          z-index: 1000;
-        }
-      `}</style>
       <Container fluid>
         <Navbar.Brand as={Link} to="/">StepRunner 🏃‍♂️</Navbar.Brand>
-        <Nav>
+        <Nav style={{ position: 'relative' }}>
           {user && (
-            <NavDropdown
-              title="Sessions"
-              id="sessions-dropdown"
-              align="start"
-              renderMenuOnMount
-            >
-              {sessions.length === 0 ? (
-                <NavDropdown.Item disabled>No sessions yet</NavDropdown.Item>
-              ) : (
-                sessions.map((session) => (
-                  <NavDropdown.Item
-                    key={session.id}
-                    onClick={() => handleSessionSelect(session.id)}
-                  >
-                    {session.name}
-                  </NavDropdown.Item>
-                ))
-              )}
-            </NavDropdown>
+            <Dropdown align="start">
+              <Dropdown.Toggle variant="dark" id="sessions-dropdown">
+                Sessions
+              </Dropdown.Toggle>
+              <Dropdown.Menu>
+                {sessions.length === 0 ? (
+                  <Dropdown.Item disabled>No sessions yet</Dropdown.Item>
+                ) : (
+                  sessions.map((session) => (
+                    <Dropdown.Item
+                      key={session.id}
+                      onClick={() => handleSessionSelect(session.id)}
+                    >
+                      {session.name}
+                    </Dropdown.Item>
+                  ))
+                )}
+              </Dropdown.Menu>
+            </Dropdown>
           )}
         </Nav>
         <Nav className="ms-auto">
