@@ -47,7 +47,7 @@ function FeatureSidebar({ features, selectedId, onSelect, onDelete }) {
                 action
                 className={`text-truncate feature-item d-flex justify-content-between align-items-center ${f.id === selectedId ? 'active' : ''}`}
               >
-                <span onClick={() => onSelect(f)} style={{ flexGrow: 1, cursor: 'pointer' }}>
+                <span onClick={() => onSelect(f)} style={{ flexGrow: 1, cursor: 'pointer', maxWidth: '280px' }}>
                   {f.title}
                 </span>
                 {onDelete && (
