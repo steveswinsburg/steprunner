@@ -32,7 +32,7 @@ function FeatureSidebar({ features, selectedId, onSelect, onDelete }) {
           color: #bd2130;
         }
       `}</style>
-     <div className="flex-shrink-0 overflow-hidden mb-5" style={{ width: '295px' }}>
+     <div className="flex-shrink-0 overflow-hidden mb-5" style={{ width: '350px' }}>
         <h5 className="p-3">Features</h5>
         <ListGroup variant="flush">
           {features.length === 0 ? (
@@ -70,7 +70,7 @@ function FeatureSidebar({ features, selectedId, onSelect, onDelete }) {
       </div>
       
       {activities.length > 0 && (
-        <div className="overflow-auto mb-3" style={{ maxHeight: '500px', width: '295px' }}>
+        <div className="overflow-auto mb-3" style={{ maxHeight: '500px', width: '350px' }}>
           <h5 className="p-3">Activity</h5>
           <ul className="list-unstyled small mb-0 px-3">
             {activities.map((log, idx) => (

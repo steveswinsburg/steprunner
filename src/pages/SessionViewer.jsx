@@ -692,7 +692,7 @@ function SessionViewer() {
                   <input
                     type="text"
                     className="form-control form-control-sm d-inline-block"
-                    style={{ width: 'auto' }}
+                    style={{ width: '400px' }}
                     value={featureNameValue}
                     onChange={(e) => setFeatureNameValue(e.target.value)}
                     onBlur={handleSaveFeatureName}
