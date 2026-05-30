@@ -928,6 +928,7 @@ function SessionViewer() {
                               className="btn-step-action"
                               onClick={() => handleAttachmentClick(sIdx, stepIdx)}
                               title="Attach File"
+                              aria-label="Attach file to step"
                             >
                               <FaPaperclip />
                             </Button>
