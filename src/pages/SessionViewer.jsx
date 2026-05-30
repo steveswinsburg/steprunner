@@ -365,14 +365,36 @@ function SessionViewer() {
   const handleSaveFeatureName = async () => {
     if (!selectedFeature || !featureNameValue.trim()) return;
 
-    await db.features.update(selectedFeature.id, { title: featureNameValue.trim() });
-    setParsed(prev => ({ ...prev, title: featureNameValue.trim() }));
-    setSelectedFeature(prev => ({ ...prev, title: featureNameValue.trim() }));
+    const newTitle = featureNameValue.trim();
+    // Short-circuit if title hasn't changed
+    if (newTitle === selectedFeature.title) {
+      setFeatureNameEditing(false);
+      return;
+    }
+
+    // Update content: either JSON or .feature text
+    let newContent = selectedFeature.content;
+    try {
+      // Try JSON first (Cucumber report)
+      const jsonContent = JSON.parse(selectedFeature.content);
+      jsonContent.name = newTitle;
+      newContent = JSON.stringify(jsonContent, null, 2);
+    } catch {
+      // Otherwise, replace Feature: line in .feature text
+      newContent = selectedFeature.content.replace(
+        /^(\s*)Feature:\s*.*/m,
+        `$1Feature: ${newTitle}`
+      );
+    }
+
+    await db.features.update(selectedFeature.id, { title: newTitle, content: newContent });
+    setParsed(prev => ({ ...prev, title: newTitle }));
+    setSelectedFeature(prev => ({ ...prev, title: newTitle, content: newContent }));
     setFeatures(prev => prev.map(f =>
-      f.id === selectedFeature.id ? { ...f, title: featureNameValue.trim() } : f
+      f.id === selectedFeature.id ? { ...f, title: newTitle, content: newContent } : f
     ));
     setFeatureNameEditing(false);
-    await logActivity(`Updated feature name to "${featureNameValue.trim()}"`);
+    await logActivity(`Updated feature name to "${newTitle}"`);
   };
 
   const handleBackToUpload = () => {
