@@ -22,7 +22,15 @@ function Header({ user, onLogout }) {
 
   return (
     <Navbar bg="dark" variant="dark" expand="lg">
-      <Container>
+      <style>{`
+        .sessions-dropdown-menu {
+          position: absolute;
+          top: 100%;
+          left: 0;
+          z-index: 1000;
+        }
+      `}</style>
+      <Container fluid>
         <Navbar.Brand as={Link} to="/">StepRunner 🏃‍♂️</Navbar.Brand>
         <Nav>
           {user && (
@@ -30,6 +38,7 @@ function Header({ user, onLogout }) {
               title="Sessions"
               id="sessions-dropdown"
               align="start"
+              renderMenuOnMount
             >
               {sessions.length === 0 ? (
                 <NavDropdown.Item disabled>No sessions yet</NavDropdown.Item>
