@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Navbar, Container, Nav, Image, Button, NavDropdown } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { FaChevronDown } from 'react-icons/fa';
 import db from '../db/indexedDb';
 
 function Header({ user, onLogout }) {
@@ -28,11 +27,7 @@ function Header({ user, onLogout }) {
         <Nav>
           {user && (
             <NavDropdown
-              title={
-                <>
-                  Sessions <FaChevronDown size={10} />
-                </>
-              }
+              title="Sessions"
               id="sessions-dropdown"
               align="start"
             >
