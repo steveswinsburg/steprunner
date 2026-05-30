@@ -357,7 +357,8 @@ function SessionViewer() {
   };
 
   const handleStartEditFeatureName = () => {
-    setFeatureNameValue(parsed.title);
+    // Use persisted title from selectedFeature to avoid stale data
+    setFeatureNameValue(selectedFeature?.title || parsed.title);
     setFeatureNameEditing(true);
   };
 
